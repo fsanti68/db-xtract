@@ -3,6 +3,7 @@ package com.dsf.dbxtract.cdc.sample;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.dsf.dbxtract.cdc.Data;
 import com.dsf.dbxtract.cdc.Handler;
 
 /**
@@ -27,9 +28,8 @@ public class TestHandler implements Handler {
 		return "SELECT * FROM TEST WHERE KEY1 = :key1 AND KEY2 = :key2";
 	}
 
-	public void publish(String json) throws Exception {
-		logger.info("Data to Publish:\n" + json);
-		logger.debug(json);
+	public void publish(Data data) throws Exception {
+		logger.info("Data to Publish:\n" + data.toString());
 		// TODO: enviar os dados para alguem...
 	}
 }

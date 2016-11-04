@@ -12,3 +12,4 @@ junit
 log4j
 mysql
 org
+dependency-reduced-pom.xml

@@ -25,5 +25,5 @@ public interface Handler {
 	/**
 	 * Publishes captured data (like writing a file or publishing to a kafka queue).
 	 */
-	public void publish(String json) throws Exception;
+	public void publish(Data data) throws Exception;
 }

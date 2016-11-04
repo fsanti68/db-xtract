@@ -39,8 +39,7 @@ public class AppTest extends TestCase {
 	 */
 	public void testApp() throws Exception {
 
-		final Config config = new Config(
-				"/Users/fabio/Public/PromonLogicalis/Monitor Online/config/config.properties");
+		final Config config = new Config("/Users/fabio/Public/PromonLogicalis/Monitor Online/config/config.properties");
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().get(0);
@@ -52,7 +51,7 @@ public class AppTest extends TestCase {
 		// prepara os dados
 		Connection conn = ds.getConnection();
 		// Map<String, Integer> updated = new HashMap<String, Integer>();
-		
+
 		conn.createStatement().execute("truncate table test");
 		conn.createStatement().execute("truncate table j$test");
 
@@ -81,7 +80,7 @@ public class AppTest extends TestCase {
 				App app = new App();
 				app.setConfig(config);
 				try {
-					app.start("Agent-" + (System.currentTimeMillis() % 1000));
+					app.start();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -108,7 +107,7 @@ public class AppTest extends TestCase {
 		ds.close();
 
 		Thread.sleep(2000);
-		
+
 		t1.interrupt();
 		t2.interrupt();
 	}

@@ -134,15 +134,13 @@ public class Executor {
 			logger.debug(agentName + " :: nothing to load");
 			return;
 		}
-		StringBuilder writer = new StringBuilder();
 		logger.debug(agentName + " :: getting data");
 		String query = handler.getTargetQuery();
 		NamedParameterStatement ps = null;
 		ResultSet rs = null;
 		try {
+			Data data = null;
 			ps = new NamedParameterStatement(conn, query);
-			writer.append("{ rows: [");
-			boolean first = true;
 			for (Map<String, Object> keys : rows) {
 				for (String k : keys.keySet()) {
 					if (query.contains(":" + k)) {
@@ -152,30 +150,19 @@ public class Executor {
 				if (rs != null)
 					rs.close();
 				rs = ps.executeQuery();
-				int cols = rs.getMetaData().getColumnCount();
-				String[] colNames = new String[cols];
-				for (int i = 0; i < cols; i++) {
-					colNames[i] = rs.getMetaData().getColumnLabel(i + 1);
+				if (data == null) {
+					int cols = rs.getMetaData().getColumnCount();
+					String[] colNames = new String[cols];
+					for (int i = 0; i < cols; i++) {
+						colNames[i] = rs.getMetaData().getColumnLabel(i + 1);
+					}
+					data = new Data(colNames);
 				}
 				while (rs.next()) {
-					if (first) {
-						writer.append(",");
-						first = false;
-					}
-					writer.append("\n{");
-					for (int i = 0; i < cols; i++) {
-						writer.append(i == 0 ? "\"" : ", \"");
-						writer.append(colNames[i]);
-						writer.append("\": \"");
-						writer.append(rs.getString(i + 1));
-						writer.append("\"");
-					}
-					writer.append("}");
-					first = false;
+					data.append(rs);
 				}
 			}
-			writer.append("\n] }");
-			handler.publish(writer.toString());
+			handler.publish(data);
 
 		} finally {
 			if (rs != null)
