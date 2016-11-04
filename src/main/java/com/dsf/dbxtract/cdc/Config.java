@@ -104,8 +104,11 @@ public class Config {
 	 * 
 	 * @return endereco de conexao do ZooKeeper (por ex. "localhost:2181")
 	 */
-	public String getZooKeeper() {
-		return props.getProperty("zookeeper");
+	public String getZooKeeper() throws Exception {
+		String s = props.getProperty("zookeeper");
+		if (s == null || s.isEmpty())
+			throw new Exception("zookeeper is a required configuration parameter!");
+		return s;
 	}
 
 	/**

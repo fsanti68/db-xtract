@@ -28,7 +28,7 @@ public class App {
 		return config;
 	}
 
-	public void start() {
+	public void start() throws Exception {
 
 		// Get ZooKeeper's connection string
 		String zkConnection = config.getZooKeeper();
@@ -61,23 +61,28 @@ public class App {
 		}
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 
-		App app = new App();
-		for (int i = 0; i < args.length - 1; i++) {
-			if (args[i].equals("--config")) {
-				String configFilename = args[++i];
-				app.setConfig(new Config(configFilename));
-				PropertyConfigurator.configure(configFilename);
+		try {
+			App app = new App();
+			for (int i = 0; i < args.length - 1; i++) {
+				if (args[i].equals("--config")) {
+					String configFilename = args[++i];
+					app.setConfig(new Config(configFilename));
+					PropertyConfigurator.configure(configFilename);
+				}
 			}
-		}
 
-		if (app.getConfig() == null) {
-			System.err.println("Parameter --config missing.");
-			System.out.println("Usage: java -jar dbxtract.jar --config </path/to/config.properties>");
-			System.exit(1);
-		}
+			if (app.getConfig() == null) {
+				System.err.println("Parameter --config missing.");
+				System.out.println("Usage: java -jar dbxtract.jar --config </path/to/config.properties>");
+				System.exit(1);
+			}
 
-		app.start();
+			app.start();
+
+		} catch (Exception e) {
+			logger.fatal("Something really wrong happened", e);
+		}
 	}
 }
