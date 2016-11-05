@@ -17,12 +17,19 @@ public class Source {
 
 	/**
 	 * 
-	 * @param name nome que representa a fonte de dados
-	 * @param connection string de conexão
-	 * @param driver classe Java que implementa o JDBC
-	 * @param user usuário na base de dados
-	 * @param password senha do usuário
-	 * @param handlers lista separada por vírgulas das classes que implementam a interface {@link Handler} 
+	 * @param name
+	 *            data source arbitrary name
+	 * @param connection
+	 *            database connection string
+	 * @param driver
+	 *            jdbc driver full class name
+	 * @param user
+	 *            database user
+	 * @param password
+	 *            user's password
+	 * @param handlers
+	 *            comma-delimited class names implementing the interface
+	 *            {@link Handler}
 	 */
 	public Source(String name, String connection, String driver, String user, String password, String handlers) {
 		this.name = name;

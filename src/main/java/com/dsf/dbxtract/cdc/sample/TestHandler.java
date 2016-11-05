@@ -32,8 +32,7 @@ public class TestHandler implements Handler {
 	}
 
 	/**
-	 * Os parâmetros devem ser referenciados da mesma forma que nas NamedQueries
-	 * do JPA.
+	 * Query parameters must be referenced just like in JPA's NamedQueries.
 	 */
 	public String getTargetQuery() {
 		return "SELECT * FROM TEST WHERE KEY1 = :key1 AND KEY2 = :key2";
@@ -43,6 +42,6 @@ public class TestHandler implements Handler {
 		logger.info("Data to Publish:\n" + data.toString());
 		System.out.println("[TestHandler.publish] batch size = " + data.getRows().size());
 
-		// TODO: enviar os dados para alguem...
+		// TODO: send data somewhere
 	}
 }

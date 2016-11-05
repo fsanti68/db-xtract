@@ -66,11 +66,10 @@ public class Config {
 	}
 
 	/**
-	 * A lista das fontes de dados é mantida no arquivo de configuração, sob o
-	 * item "sources". Várias fontes de dados podem ser cadastradas, separadas
-	 * por vírgula.
+	 * The sources list is kept un the configuration file, under the entry
+	 * 'sources'. Many data sources can be declared, separated by comma. 
 	 * 
-	 * @return lista das fontes de dados
+	 * @return data sources list
 	 */
 	public List<Source> getDataSources() {
 
