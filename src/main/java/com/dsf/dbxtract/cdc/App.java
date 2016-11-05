@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 /**
- * 
+ * Main application
  * 
  * @author fabio de santi
  * @version 0.1
@@ -18,7 +18,6 @@ public class App {
 	private static Logger logger = LogManager.getLogger(App.class.getName());
 
 	private Config config = null;
-	// private Map<Handler, Source> handlerMap = new HashMap<Handler, Source>();
 
 	public void setConfig(Config config) {
 		this.config = config;
@@ -61,6 +60,12 @@ public class App {
 		}
 	}
 
+	/**
+	 * <p>Starts the dbxtract app.</p>
+	 * <p>Usage: java -jar dbxtract.jar --config </path/to/config.properties></p>
+	 * 
+	 * @param args
+	 */
 	public static void main(String[] args) {
 
 		try {

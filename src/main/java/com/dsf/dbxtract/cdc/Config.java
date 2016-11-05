@@ -102,7 +102,7 @@ public class Config {
 
 	/**
 	 * 
-	 * @return endereco de conexao do ZooKeeper (por ex. "localhost:2181")
+	 * @return ZooKeeper connection string (i.e. "localhost:2181")
 	 */
 	public String getZooKeeper() throws Exception {
 		String s = props.getProperty("zookeeper");
@@ -113,7 +113,7 @@ public class Config {
 
 	/**
 	 * 
-	 * @return intervalo, em milisegundos, entre os ciclos de captura
+	 * @return milliseconds between capture cycles
 	 */
 	public long getInterval() {
 		long interval = 5000L;
@@ -128,6 +128,10 @@ public class Config {
 		return interval;
 	}
 
+	/**
+	 * 
+	 * @return a convenience name for dbxtract agent instance
+	 */
 	public String getAgentName() {
 
 		if (agentName == null) {
