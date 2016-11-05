@@ -23,10 +23,13 @@ public class ConfigTest extends TestCase {
 	protected void setUp() throws Exception {
 		File f = File.createTempFile("config", "props");
 		FileWriter fw = new FileWriter(f);
+		fw.append("log4j.rootLogger=DEBUG,A1\nlog4j.appender.A1=org.apache.log4j.ConsoleAppender"
+				+ "log4j.appender.A1.layout=org.apache.log4j.PatternLayout"
+				+ "log4j.appender.A1.layout.ConversionPattern=%-4r [%t] %-5p %c %x - %m%n");
 		fw.append("zookeeper=").append(zookeeper).append("\ninterval=").append(Long.toString(interval))
-				.append("\nsources=test\nsource.test.connection=").append(connection).append("\nsource.test.driver=")
-				.append(driver).append("\nsource.test.user=root").append("\nsource.test.password=mysql")
-				.append("\nsource.test.handlers=").append(handler);
+				.append("thread.pool.size=5").append("\nsources=test\nsource.test.connection=").append(connection)
+				.append("\nsource.test.driver=").append(driver).append("\nsource.test.user=root")
+				.append("\nsource.test.password=mysql").append("\nsource.test.handlers=").append(handler);
 		fw.close();
 		config = new Config(f.getAbsolutePath());
 		super.setUp();

@@ -2,6 +2,7 @@ package com.dsf.dbxtract.cdc;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -35,8 +36,12 @@ public class Config {
 	 */
 	public Config(String source) throws Exception {
 
+		this(new FileInputStream(new File(source)));
+	}
+
+	public Config(InputStream source) throws Exception {
 		Properties props = new Properties();
-		props.load(new FileInputStream(new File(source)));
+		props.load(source);
 		this.props = props;
 		init();
 	}
@@ -126,6 +131,23 @@ public class Config {
 			}
 		}
 		return interval;
+	}
+
+	/**
+	 * 
+	 * @return maximum concurrent threads
+	 */
+	public int getThreadPoolSize() {
+		int pool = 5;
+		String _pool = props.getProperty("thread.pool.size");
+		if (_pool != null && !_pool.isEmpty()) {
+			try {
+				pool = Integer.parseInt(_pool);
+			} catch (NumberFormatException nfe) {
+				logger.warn("Invalid config 'thread.pool.size' = " + _pool + " -> assuming " + pool);
+			}
+		}
+		return pool;
 	}
 
 	/**

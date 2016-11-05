@@ -22,6 +22,10 @@ public class SimpleHandler implements Handler {
 		return journal;
 	}
 
+	public int getBatchSize() {
+		return 200;
+	}
+
 	public String getTargetQuery() {
 		return query;
 	}

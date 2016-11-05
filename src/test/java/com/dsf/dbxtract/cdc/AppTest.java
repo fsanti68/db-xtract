@@ -2,12 +2,9 @@ package com.dsf.dbxtract.cdc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-
-import com.dsf.dbxtract.cdc.App;
-import com.dsf.dbxtract.cdc.Config;
-import com.dsf.dbxtract.cdc.Source;
 
 import junit.framework.TestCase;
 
@@ -21,7 +18,8 @@ public class AppTest extends TestCase {
 	 */
 	public void testApp() throws Exception {
 
-		final Config config = new Config("/Users/fabio/Public/PromonLogicalis/Monitor Online/config/config.properties");
+		final Config config = new Config(
+				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-apptest.properties"));
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().get(0);
@@ -55,23 +53,9 @@ public class AppTest extends TestCase {
 		ps.executeBatch();
 		ps.close();
 
-		// Cria duas threads para ter alguma concorrência
-		Runnable test = new Runnable() {
-
-			public void run() {
-				App app = new App();
-				app.setConfig(config);
-				try {
-					app.start();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		};
-		Thread t1 = new Thread(test);
-		Thread t2 = new Thread(test);
-		t1.start();
-		t2.start();
+		App app = new App();
+		app.setConfig(config);
+		app.start();
 
 		// Popula as tabelas de journal
 		ps = conn.prepareStatement("insert into j$test (key1,key2) values (?,?)");
@@ -85,12 +69,20 @@ public class AppTest extends TestCase {
 		}
 		ps.executeBatch();
 		ps.close();
+
+		while (true) {
+			Thread.sleep(1000);
+
+			ResultSet rs = conn.createStatement().executeQuery("select count(*) from j$test");
+			if (rs.next()) {
+				long count = rs.getLong(1);
+				System.out.println("remaining journal rows: " + count);
+				rs.close();
+				if (count == 0L)
+					break;
+			}
+		}
 		conn.close();
 		ds.close();
-
-		Thread.sleep(2000);
-
-		t1.interrupt();
-		t2.interrupt();
 	}
 }

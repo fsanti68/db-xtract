@@ -1,7 +1,8 @@
 package com.dsf.dbxtract.cdc;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -11,7 +12,7 @@ import org.apache.log4j.PropertyConfigurator;
  * Main application
  * 
  * @author fabio de santi
- * @version 0.1
+ * @version 0.2
  */
 public class App {
 
@@ -35,34 +36,24 @@ public class App {
 		// Get interval (in milliseconds) between executions
 		long interval = config.getInterval();
 
+		ScheduledExecutorService scheduledService = Executors.newScheduledThreadPool(config.getThreadPoolSize());
+
 		// Prepare the task's list. Each handler becomes a task.
-		List<Executor> executors = new ArrayList<Executor>();
 		for (Handler handler : config.getHandlers()) {
-			executors.add(
-					new Executor(config.getAgentName(), zkConnection, handler, config.getSourceByHandler(handler)));
-		}
 
-		// Process tasks
-		while (true) {
-			for (Executor executor : executors) {
-				try {
-					executor.execute();
-
-				} catch (Exception e) {
-					logger.error("Unable to execute task '" + executor.toString() + "'", e);
-				}
-			}
-
-			try {
-				Thread.sleep(interval);
-			} catch (Exception e) {
-			}
+			Runnable executor = new JournalExecutor(config.getAgentName(), zkConnection, handler,
+					config.getSourceByHandler(handler));
+			scheduledService.scheduleAtFixedRate(executor, 0L, interval, TimeUnit.MILLISECONDS);
 		}
 	}
 
 	/**
-	 * <p>Starts the dbxtract app.</p>
-	 * <p>Usage: java -jar dbxtract.jar --config </path/to/config.properties></p>
+	 * <p>
+	 * Starts the dbxtract app.
+	 * </p>
+	 * <p>
+	 * Usage: java -jar dbxtract.jar --config </path/to/config.properties>
+	 * </p>
 	 * 
 	 * @param args
 	 */

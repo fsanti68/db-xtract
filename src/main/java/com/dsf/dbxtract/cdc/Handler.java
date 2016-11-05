@@ -13,6 +13,12 @@ public interface Handler {
 	 * @return journal table's name
 	 */
 	public String getJournalTable();
+	
+	/**
+	 * 
+	 * @return number of rows to be imported for each execution
+	 */
+	public int getBatchSize(); 
 
 	/**
 	 * <p>The query to retrieve changed data can references columns from journal table as named parameters:</p>

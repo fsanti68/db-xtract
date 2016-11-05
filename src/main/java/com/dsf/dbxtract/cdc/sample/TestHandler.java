@@ -7,9 +7,16 @@ import com.dsf.dbxtract.cdc.Data;
 import com.dsf.dbxtract.cdc.Handler;
 
 /**
- * Exemplo de classe que controla uma tabela para carga de dados.
+ * <p>
+ * Sample handler:
+ * </p>
+ * <ul>
+ * <li>journal: j$test</li>
+ * <li>batch size: 200 rows per batch</li>
+ * <li>target query: select * from test where key1 = :key1 and key2 = :key2</li>
+ * </ul>
  * 
- * @author fabio
+ * @author fabio de santi
  *
  */
 public class TestHandler implements Handler {
@@ -18,6 +25,10 @@ public class TestHandler implements Handler {
 
 	public String getJournalTable() {
 		return "J$TEST";
+	}
+
+	public int getBatchSize() {
+		return 200;
 	}
 
 	/**
@@ -30,6 +41,8 @@ public class TestHandler implements Handler {
 
 	public void publish(Data data) throws Exception {
 		logger.info("Data to Publish:\n" + data.toString());
+		System.out.println("[TestHandler.publish] batch size = " + data.getRows().size());
+
 		// TODO: enviar os dados para alguem...
 	}
 }

@@ -23,14 +23,14 @@ import org.apache.log4j.Logger;
 import com.dsf.utils.sql.NamedParameterStatement;
 
 /**
- * Class that does all hard work.
+ * This class is specialized in process journal-based CDC.
  * 
  * @author fabio de santi
  *
  */
-public class Executor {
+public class JournalExecutor implements Runnable {
 
-	private static final Logger logger = LogManager.getLogger(Executor.class.getName());
+	private static final Logger logger = LogManager.getLogger(JournalExecutor.class.getName());
 
 	private static final String LOCKPREFIX = "/dbxtract/cdc/";
 
@@ -50,7 +50,7 @@ public class Executor {
 	 * @param source
 	 *            {@link Source}
 	 */
-	public Executor(String agentName, String zookeeper, Handler handler, Source source) {
+	public JournalExecutor(String agentName, String zookeeper, Handler handler, Source source) {
 		logger.info(agentName + " :: Creating executor for " + handler + " and " + source);
 		this.agentName = agentName;
 		this.zookeeper = zookeeper;
@@ -87,8 +87,8 @@ public class Executor {
 			// Obtem os dados do journal
 			logger.debug(agentName + " :: getting journalized data");
 			ps = conn.prepareStatement("select * from " + handler.getJournalTable());
-			ps.setFetchSize(200);
-			ps.setMaxRows(200);
+			ps.setFetchSize(handler.getBatchSize());
+			ps.setMaxRows(handler.getBatchSize());
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				if (journalColumns == null) {
@@ -215,10 +215,9 @@ public class Executor {
 	 * This routine is controlled by ZooKeeper that ensures only one node will
 	 * try to import a specific table's data at time.
 	 * 
-	 * @throws SQLException
-	 * @throws Exception
 	 */
-	public void execute() throws SQLException, Exception {
+	@Override
+	public void run() {
 
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 		CuratorFramework client = CuratorFrameworkFactory.newClient(zookeeper, retryPolicy);
@@ -229,31 +228,36 @@ public class Executor {
 		String lockPath = LOCKPREFIX + source.getName();
 		InterProcessMutex lock = new InterProcessMutex(client, lockPath);
 		logger.debug(agentName + " :: waiting lock from " + zookeeper + " [ " + lockPath + " ]");
-		if (lock.acquire(5, TimeUnit.SECONDS)) {
-			try {
-				logger.debug(agentName + " :: Obtaining database connection");
-				conn = getConnection();
+		try {
+			if (lock.acquire(5, TimeUnit.SECONDS)) {
+				try {
+					logger.debug(agentName + " :: Obtaining database connection");
+					conn = getConnection();
 
-				// Get journal data
-				List<Map<String, Object>> rows = getJournalKeys(conn);
+					// Get journal data
+					List<Map<String, Object>> rows = getJournalKeys(conn);
 
-				// Retrieve changed data and publish it
-				selectAndPublish(conn, rows);
+					// Retrieve changed data and publish it
+					selectAndPublish(conn, rows);
 
-				// Remove from journal imported & published data
-				deleteFromJournal(conn, rows);
+					// Remove from journal imported & published data
+					deleteFromJournal(conn, rows);
 
-			} finally {
-				if (conn != null) {
-					try {
-						conn.close();
-					} catch (Exception e) {
+				} finally {
+					if (conn != null) {
+						try {
+							conn.close();
+						} catch (Exception e) {
+						}
 					}
+					logger.debug(agentName + " :: lock release");
+					lock.release();
+					client.close();
 				}
-				logger.debug(agentName + " :: lock release");
-				lock.release();
-				client.close();
 			}
+
+		} catch (Exception e) {
+			logger.error(agentName + " :: failure", e);
 		}
 	}
 }
