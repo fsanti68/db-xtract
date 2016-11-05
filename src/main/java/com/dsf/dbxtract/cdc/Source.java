@@ -66,7 +66,7 @@ public class Source {
 
 	@Override
 	public String toString() {
-		return "Source [name=" + name + ", connection=" + connection + ", driver=" + driver + ", user=" + user
-				+ ", password=" + password + "]";
+		return "Source [name=" + name + ", connection=" + connection + ", driver=" + driver + ", user=" + user + "/"
+				+ password + "]";
 	}
 }

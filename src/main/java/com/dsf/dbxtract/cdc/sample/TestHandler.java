@@ -39,9 +39,10 @@ public class TestHandler implements Handler {
 	}
 
 	public void publish(Data data) throws Exception {
-		logger.info("Data to Publish:\n" + data.toString());
-		System.out.println("[TestHandler.publish] batch size = " + data.getRows().size());
+		logger.info("Data to Publish (columns/rows): " + data.getColumnNames().length + "/" + data.getRows().size()
+				+ " rows");
 
 		// TODO: send data somewhere
+		System.out.println("[TestHandler.publish] batch size = " + data.getRows().size());
 	}
 }

@@ -24,7 +24,11 @@ public class DataTest extends TestCase {
 		try {
 			data.append(new Object[] { "3", "4", "5" });
 			fail("cannot accept more data than declared columns");
-
+		} catch (Exception e) {
+		}
+		try {
+			data.append(new Object[] { "6" });
+			fail("cannot accept less data than declared columns");
 		} catch (Exception e) {
 		}
 	}

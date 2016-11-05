@@ -44,6 +44,7 @@ public class Config {
 		props.load(source);
 		this.props = props;
 		init();
+		report();
 	}
 
 	private void init() throws Exception {
@@ -67,7 +68,7 @@ public class Config {
 
 	/**
 	 * The sources list is kept un the configuration file, under the entry
-	 * 'sources'. Many data sources can be declared, separated by comma. 
+	 * 'sources'. Many data sources can be declared, separated by comma.
 	 * 
 	 * @return data sources list
 	 */
@@ -171,5 +172,17 @@ public class Config {
 			}
 		}
 		return agentName;
+	}
+
+	private void report() {
+		logger.info("Loaded configuration: ");
+		logger.info("[Data Sources      ] " + getDataSources().size() + " loaded");
+		try {
+			logger.info("[Zookeeper address ] " + getZooKeeper());
+		} catch (Exception e) {
+			logger.info("[Zookeeper address ] failed");
+		}
+		logger.info("[Execution Interval] " + getInterval() + " milliseconds");
+		logger.info("[Thread pool size  ] " + getThreadPoolSize());
 	}
 }

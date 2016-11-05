@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 import com.dsf.utils.sql.NamedParameterStatement;
 
 /**
- * This class is specialized in process journal-based CDC.
+ * This class is specialized on journal-based change-data-capture.
  * 
  * @author fabio de santi
  *
@@ -58,6 +58,7 @@ public class JournalExecutor implements Runnable {
 		this.source = source;
 		BasicDataSource ds = dataSources.get(source);
 		if (ds == null) {
+			logger.info(agentName + " :: setting up a connection pool for " + source.toString());
 			ds = new BasicDataSource();
 			ds.setDriverClassName(source.getDriver());
 			ds.setUsername(source.getUser());
@@ -219,6 +220,7 @@ public class JournalExecutor implements Runnable {
 	@Override
 	public void run() {
 
+		logger.debug(agentName + " :: connecting to " + zookeeper);
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 		CuratorFramework client = CuratorFrameworkFactory.newClient(zookeeper, retryPolicy);
 		client.start();
@@ -227,11 +229,11 @@ public class JournalExecutor implements Runnable {
 		Connection conn = null;
 		String lockPath = LOCKPREFIX + source.getName();
 		InterProcessMutex lock = new InterProcessMutex(client, lockPath);
-		logger.debug(agentName + " :: waiting lock from " + zookeeper + " [ " + lockPath + " ]");
+		logger.debug(agentName + " :: waiting lock from " + zookeeper + lockPath);
 		try {
 			if (lock.acquire(5, TimeUnit.SECONDS)) {
 				try {
-					logger.debug(agentName + " :: Obtaining database connection");
+					logger.debug(agentName + " :: get database connection");
 					conn = getConnection();
 
 					// Get journal data

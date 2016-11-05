@@ -59,18 +59,21 @@ public class App {
 	 */
 	public static void main(String[] args) {
 
+		System.out.println("Welcome to db-xtract");
 		try {
 			App app = new App();
 			for (int i = 0; i < args.length - 1; i++) {
 				if (args[i].equals("--config")) {
 					String configFilename = args[++i];
-					app.setConfig(new Config(configFilename));
+					// configure log4j
 					PropertyConfigurator.configure(configFilename);
+					// an get db-xtract configuration
+					app.setConfig(new Config(configFilename));
 				}
 			}
 
 			if (app.getConfig() == null) {
-				System.err.println("Parameter --config missing.");
+				System.out.println("Parameter --config missing.");
 				System.out.println("Usage: java -jar dbxtract.jar --config </path/to/config.properties>");
 				System.exit(1);
 			}
