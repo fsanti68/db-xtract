@@ -9,17 +9,11 @@ DB-Xtract can be distributed as concurrent <i>CDC</i> agents, providing scalabil
 ## Getting Started
 
 For your first try, you need:
-<<<<<<< HEAD
-1. a JVM
-2. ZooKeeper (instructions at https://zookeeper.apache.org/)
-3. your preferred database (PostgreSQL, Oracle, MariaDB and so on). Out-of-the-box example is using MySQL, but you don't need to stick to this.
-=======
 <ul>
 <li>a JVM</li>
 <li>ZooKeeper (instructions at https://zookeeper.apache.org/)</li>
 <li>your preferred database (PostgreSQL, Oracle, MariaDB and so on). Out-of-the-box example is using MySQL, but you don't need to stick to this.</li>
 </ul>
->>>>>>> Complete README.md
 
 ### Installing
 
