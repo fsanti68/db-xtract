@@ -129,12 +129,12 @@ public class JournalExecutor implements Runnable {
 			// Obtem os dados do journal
 			logger.debug(agentName + " :: getting journalized data");
 			String baseQuery = "select * from " + handler.getJournalTable();
-			if (JournalStrategy.DELETE.equals(handler.getStrategy())) {
-				ps = conn.prepareStatement(baseQuery);
-			} else {
+			if (JournalStrategy.WINDOW.equals(handler.getStrategy())) {
 				Long lastWindowId = getLastWindowId(client);
 				ps = conn.prepareStatement(baseQuery + " where window_id > ?");
 				ps.setLong(1, lastWindowId);
+			} else {
+				ps = conn.prepareStatement(baseQuery);
 			}
 			ps.setFetchSize(handler.getBatchSize());
 			ps.setMaxRows(handler.getBatchSize());
@@ -321,13 +321,13 @@ public class JournalExecutor implements Runnable {
 					// Retrieve changed data and publish it
 					selectAndPublish(conn, rows);
 
-					if (JournalStrategy.DELETE.equals(handler.getStrategy())) {
-						// Remove from journal imported & published data
-						deleteFromJournal(conn, rows);
-
-					} else {
+					if (JournalStrategy.WINDOW.equals(handler.getStrategy())) {
 						// Update last loaded window_id
 						markLastLoaded(client, rows);
+
+					} else {
+						// Remove from journal imported & published data
+						deleteFromJournal(conn, rows);
 					}
 
 				} finally {

@@ -29,12 +29,25 @@ public class SimpleJournalHandler implements JournalHandler {
 
 	private String journal;
 	private String query;
+	private int batchSize;
 	private Publisher publisher;
+	private JournalStrategy strategy;
 
-	public SimpleJournalHandler(String journalTable, String query, Publisher publisher) {
+	public SimpleJournalHandler(String journalTable, String query, int batchSize, Publisher publisher,
+			JournalStrategy strategy) throws Exception {
+		if (journalTable == null || journalTable.isEmpty())
+			throw new Exception("journal table name is required");
+		if (query == null || query.isEmpty())
+			throw new Exception("query is required");
+		if (batchSize <= 0)
+			throw new Exception("batch size must be a positive integer");
+		if (publisher == null)
+			throw new Exception("published is required");
 		this.journal = journalTable;
 		this.query = query;
+		this.batchSize = batchSize;
 		this.publisher = publisher;
+		this.strategy = strategy == null ? JournalStrategy.WINDOW : strategy;
 	}
 
 	public String getJournalTable() {
@@ -42,7 +55,7 @@ public class SimpleJournalHandler implements JournalHandler {
 	}
 
 	public int getBatchSize() {
-		return 200;
+		return batchSize;
 	}
 
 	public String getTargetQuery() {
@@ -55,6 +68,6 @@ public class SimpleJournalHandler implements JournalHandler {
 
 	@Override
 	public JournalStrategy getStrategy() {
-		return JournalStrategy.DELETE;
+		return strategy;
 	}
 }

@@ -10,7 +10,7 @@ package com.dsf.dbxtract.cdc.journal;
  *
  */
 public enum JournalStrategy {
-	DELETE(0), WINDOW(1);
+	DELETE(1), WINDOW(0);
 
 	private int strategy;
 
