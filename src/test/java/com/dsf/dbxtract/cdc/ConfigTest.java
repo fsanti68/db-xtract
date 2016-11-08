@@ -20,8 +20,8 @@ import java.io.File;
 import java.io.FileWriter;
 
 import com.dsf.dbxtract.cdc.Config;
-import com.dsf.dbxtract.cdc.Handler;
 import com.dsf.dbxtract.cdc.Source;
+import com.dsf.dbxtract.cdc.journal.JournalHandler;
 
 import junit.framework.TestCase;
 
@@ -69,7 +69,7 @@ public class ConfigTest extends TestCase {
 
 	public void testGetSourceByHandler() {
 		Source src = config.getDataSources().get(0);
-		for (Handler handler : config.getHandlers()) {
+		for (JournalHandler handler : config.getHandlers()) {
 			assertEquals(src, config.getSourceByHandler(handler));
 		}
 	}

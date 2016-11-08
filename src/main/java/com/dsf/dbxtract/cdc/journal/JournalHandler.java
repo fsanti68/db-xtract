@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.dsf.dbxtract.cdc;
+package com.dsf.dbxtract.cdc.journal;
+
+import com.dsf.dbxtract.cdc.Data;
 
 /**
  * Interface to be implemented by capture executors.
@@ -22,30 +24,45 @@ package com.dsf.dbxtract.cdc;
  * @author fabio de santi
  * @version 0.1
  */
-public interface Handler {
+public interface JournalHandler {
 
 	/**
 	 * 
 	 * @return journal table's name
 	 */
 	public String getJournalTable();
-	
+
 	/**
 	 * 
 	 * @return number of rows to be imported for each execution
 	 */
-	public int getBatchSize(); 
+	public int getBatchSize();
 
 	/**
-	 * <p>The query to retrieve changed data can references columns from journal table as named parameters:</p>
-	 * <code>select * from mytable where pk = :pk</code> 
+	 * <p>
+	 * The query to retrieve changed data can references columns from journal
+	 * table as named parameters:
+	 * </p>
+	 * <code>select * from mytable where pk = :pk</code>
 	 * 
 	 * @return data retrieval query
 	 */
 	public String getTargetQuery();
 
 	/**
-	 * Publishes captured data (like writing a file or publishing to a kafka queue).
+	 * Publishes captured data (like writing a file or publishing to a kafka
+	 * queue).
 	 */
 	public void publish(Data data) throws Exception;
+
+	/**
+	 * Establish the journal strategy:
+	 * <ul>
+	 * <li>DELETE - removes imported rows from journal table</li>
+	 * <li>WINDOW - memorizes 
+	 * </ul>
+	 * 
+	 * @return
+	 */
+	public JournalStrategy getStrategy();
 }

@@ -31,6 +31,8 @@ import java.util.Properties;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.dsf.dbxtract.cdc.journal.JournalHandler;
+
 /**
  * 
  * @author fabio de santi
@@ -43,7 +45,7 @@ public class Config {
 	private Properties props;
 	private String agentName = null;
 	private List<Source> sources = null;
-	private Map<Handler, Source> handlerMap = new HashMap<Handler, Source>();
+	private Map<JournalHandler, Source> handlerMap = new HashMap<JournalHandler, Source>();
 
 	/**
 	 * 
@@ -69,9 +71,9 @@ public class Config {
 		for (Source source : getDataSources()) {
 			String[] handlers = source.getHandlers().split(",");
 			for (String handlerName : handlers) {
-				Handler handler;
+				JournalHandler handler;
 				try {
-					handler = (Handler) Class.forName(handlerName).newInstance();
+					handler = (JournalHandler) Class.forName(handlerName).newInstance();
 					handlerMap.put(handler, source);
 
 				} catch (Exception e) {
@@ -108,7 +110,7 @@ public class Config {
 	 * 
 	 * @return
 	 */
-	public Collection<Handler> getHandlers() {
+	public Collection<JournalHandler> getHandlers() {
 		return handlerMap.keySet();
 	}
 
@@ -117,7 +119,7 @@ public class Config {
 	 * @param handler
 	 * @return
 	 */
-	public Source getSourceByHandler(Handler handler) {
+	public Source getSourceByHandler(JournalHandler handler) {
 		return handlerMap.get(handler);
 	}
 

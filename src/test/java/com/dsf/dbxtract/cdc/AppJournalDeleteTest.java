@@ -27,7 +27,7 @@ import junit.framework.TestCase;
 /**
  * Unit test for simple App.
  */
-public class AppTest extends TestCase {
+public class AppJournalDeleteTest extends TestCase {
 
 	/**
 	 * Rigourous Test :-)
@@ -35,7 +35,7 @@ public class AppTest extends TestCase {
 	public void testApp() throws Exception {
 
 		final Config config = new Config(
-				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-apptest.properties"));
+				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-delete.properties"));
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().get(0);

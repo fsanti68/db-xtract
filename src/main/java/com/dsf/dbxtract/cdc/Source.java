@@ -16,6 +16,8 @@
 
 package com.dsf.dbxtract.cdc;
 
+import com.dsf.dbxtract.cdc.journal.JournalHandler;
+
 /**
  * Representa um banco de dados com tabelas a serem capturadas.
  * 
@@ -45,7 +47,7 @@ public class Source {
 	 *            user's password
 	 * @param handlers
 	 *            comma-delimited class names implementing the interface
-	 *            {@link Handler}
+	 *            {@link JournalHandler}
 	 */
 	public Source(String name, String connection, String driver, String user, String password, String handlers) {
 		this.name = name;

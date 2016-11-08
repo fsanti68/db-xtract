@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.dsf.dbxtract.cdc;
+package com.dsf.dbxtract.cdc.journal;
+
+import com.dsf.dbxtract.cdc.Data;
+import com.dsf.dbxtract.cdc.Publisher;
 
 /**
  * A simple handler
@@ -22,13 +25,13 @@ package com.dsf.dbxtract.cdc;
  * @author fabio de santi
  * @version 0.1
  */
-public class SimpleHandler implements Handler {
+public class SimpleJournalHandler implements JournalHandler {
 
 	private String journal;
 	private String query;
 	private Publisher publisher;
 
-	public SimpleHandler(String journalTable, String query, Publisher publisher) {
+	public SimpleJournalHandler(String journalTable, String query, Publisher publisher) {
 		this.journal = journalTable;
 		this.query = query;
 		this.publisher = publisher;
@@ -48,5 +51,10 @@ public class SimpleHandler implements Handler {
 
 	public void publish(Data data) throws Exception {
 		publisher.publish(data);
+	}
+
+	@Override
+	public JournalStrategy getStrategy() {
+		return JournalStrategy.DELETE;
 	}
 }

@@ -26,8 +26,9 @@ public class AllTests {
 		//$JUnit-BEGIN$
 		suite.addTestSuite(ConfigTest.class);
 		suite.addTestSuite(DataTest.class);
-		suite.addTestSuite(AppTest.class);
 		suite.addTestSuite(SourceTest.class);
+		suite.addTestSuite(AppJournalDeleteTest.class);
+		suite.addTestSuite(AppJournalWindowTest.class);
 		//$JUnit-END$
 		return suite;
 	}

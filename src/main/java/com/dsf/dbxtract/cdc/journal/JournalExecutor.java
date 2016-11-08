@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dsf.dbxtract.cdc;
+package com.dsf.dbxtract.cdc.journal;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -35,7 +35,10 @@ import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.KeeperException.NoNodeException;
 
+import com.dsf.dbxtract.cdc.Data;
+import com.dsf.dbxtract.cdc.Source;
 import com.dsf.utils.sql.NamedParameterStatement;
 
 /**
@@ -48,13 +51,14 @@ public class JournalExecutor implements Runnable {
 
 	private static final Logger logger = LogManager.getLogger(JournalExecutor.class.getName());
 
-	private static final String LOCKPREFIX = "/dbxtract/cdc/";
+	private static final String BASEPREFIX = "/dbxtract/cdc/";
 
 	private static Map<Source, BasicDataSource> dataSources = new HashMap<Source, BasicDataSource>();
 	private String zookeeper;
-	private Handler handler;
+	private JournalHandler handler;
 	private Source source;
 	private String agentName;
+	private String prefix;
 	private List<String> journalColumns = null;
 
 	/**
@@ -62,11 +66,11 @@ public class JournalExecutor implements Runnable {
 	 * @param zookeeper
 	 *            connection string to ZooKeeper server
 	 * @param handler
-	 *            {@link Handler}
+	 *            {@link JournalHandler}
 	 * @param source
 	 *            {@link Source}
 	 */
-	public JournalExecutor(String agentName, String zookeeper, Handler handler, Source source) {
+	public JournalExecutor(String agentName, String zookeeper, JournalHandler handler, Source source) {
 		logger.info(agentName + " :: Creating executor for " + handler + " and " + source);
 		this.agentName = agentName;
 		this.zookeeper = zookeeper;
@@ -88,14 +92,35 @@ public class JournalExecutor implements Runnable {
 		return dataSources.get(source).getConnection();
 	}
 
+	private String getPrefix() {
+		if (prefix == null) {
+			prefix = new StringBuilder(BASEPREFIX).append(source.getName()).append('/')
+					.append(handler.getJournalTable()).append('/').toString();
+		}
+		return prefix;
+	}
+
+	private Long getLastWindowId(CuratorFramework client) throws Exception {
+
+		try {
+			String s = new String(client.getData().forPath(getPrefix() + "lastWindowId"));
+			return s == null ? 0L : Long.parseLong(s);
+
+		} catch (NoNodeException nne) {
+			return 0L;
+		}
+	}
+
 	/**
 	 * Gets reference data from journal table.
 	 * 
+	 * @param client
 	 * @param conn
 	 * @return a Map list with column names and values
 	 * @throws SQLException
 	 */
-	private List<Map<String, Object>> getJournalKeys(Connection conn) throws SQLException {
+	private List<Map<String, Object>> getJournalKeys(CuratorFramework client, Connection conn)
+			throws SQLException, Exception {
 
 		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 		PreparedStatement ps = null;
@@ -103,7 +128,14 @@ public class JournalExecutor implements Runnable {
 		try {
 			// Obtem os dados do journal
 			logger.debug(agentName + " :: getting journalized data");
-			ps = conn.prepareStatement("select * from " + handler.getJournalTable());
+			String baseQuery = "select * from " + handler.getJournalTable();
+			if (JournalStrategy.DELETE.equals(handler.getStrategy())) {
+				ps = conn.prepareStatement(baseQuery);
+			} else {
+				Long lastWindowId = getLastWindowId(client);
+				ps = conn.prepareStatement(baseQuery + " where window_id > ?");
+				ps.setLong(1, lastWindowId);
+			}
 			ps.setFetchSize(handler.getBatchSize());
 			ps.setMaxRows(handler.getBatchSize());
 			rs = ps.executeQuery();
@@ -130,6 +162,7 @@ public class JournalExecutor implements Runnable {
 				if (ps != null)
 					ps.close();
 			} catch (Exception e) {
+				logger.error("Failed to get journal new keys", e);
 			}
 		}
 		return result;
@@ -226,6 +259,36 @@ public class JournalExecutor implements Runnable {
 	}
 
 	/**
+	 * Memorizes the last imported window_id from journal table
+	 * 
+	 * @param rows
+	 */
+	private void markLastLoaded(CuratorFramework client, List<Map<String, Object>> rows) throws Exception {
+
+		if (rows == null || rows.isEmpty())
+			return;
+
+		Long lastWindowId = 0L;
+		for (Map<String, Object> row : rows) {
+			Number windowId = (Number) row.get("window_id");
+			if (windowId.longValue() > lastWindowId.longValue()) {
+				lastWindowId = windowId.longValue();
+			}
+		}
+
+		String k = getPrefix() + "lastWindowId";
+		String s = lastWindowId.toString();
+		try {
+			if (client.checkExists().forPath(k) == null)
+				client.create().forPath(k);
+
+			client.setData().forPath(k, s.getBytes());
+		} catch (Exception e) {
+			logger.error("failed to update last window_id", e);
+		}
+	}
+
+	/**
 	 * Gets from journal table any update, executes the query to retrieve data,
 	 * publishes to somewhere and removes imported data from journal.
 	 *
@@ -243,7 +306,7 @@ public class JournalExecutor implements Runnable {
 
 		// Uses the distributed lock recipe of ZooKeeper to avoid concurrency
 		Connection conn = null;
-		String lockPath = LOCKPREFIX + source.getName();
+		String lockPath = getPrefix() + "lock";
 		InterProcessMutex lock = new InterProcessMutex(client, lockPath);
 		logger.debug(agentName + " :: waiting lock from " + zookeeper + lockPath);
 		try {
@@ -253,13 +316,19 @@ public class JournalExecutor implements Runnable {
 					conn = getConnection();
 
 					// Get journal data
-					List<Map<String, Object>> rows = getJournalKeys(conn);
+					List<Map<String, Object>> rows = getJournalKeys(client, conn);
 
 					// Retrieve changed data and publish it
 					selectAndPublish(conn, rows);
 
-					// Remove from journal imported & published data
-					deleteFromJournal(conn, rows);
+					if (JournalStrategy.DELETE.equals(handler.getStrategy())) {
+						// Remove from journal imported & published data
+						deleteFromJournal(conn, rows);
+
+					} else {
+						// Update last loaded window_id
+						markLastLoaded(client, rows);
+					}
 
 				} finally {
 					if (conn != null) {

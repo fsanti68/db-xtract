@@ -23,6 +23,9 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import com.dsf.dbxtract.cdc.journal.JournalHandler;
+import com.dsf.dbxtract.cdc.journal.JournalExecutor;
+
 /**
  * Main application
  * 
@@ -54,7 +57,7 @@ public class App {
 		ScheduledExecutorService scheduledService = Executors.newScheduledThreadPool(config.getThreadPoolSize());
 
 		// Prepare the task's list. Each handler becomes a task.
-		for (Handler handler : config.getHandlers()) {
+		for (JournalHandler handler : config.getHandlers()) {
 
 			Runnable executor = new JournalExecutor(config.getAgentName(), zkConnection, handler,
 					config.getSourceByHandler(handler));

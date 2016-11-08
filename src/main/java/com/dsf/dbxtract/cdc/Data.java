@@ -21,8 +21,10 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.dsf.dbxtract.cdc.journal.JournalHandler;
+
 /**
- * This class is used by {@link Handler} to receive captured data.
+ * This class is used by {@link JournalHandler} to receive captured data.
  * 
  * @author fabio de santi
  *
@@ -37,7 +39,7 @@ public class Data {
 	 * @param columnNames
 	 *            list of column names
 	 */
-	protected Data(String[] columnNames) {
+	public Data(String[] columnNames) {
 		this.columnNames = columnNames;
 	}
 
@@ -47,7 +49,7 @@ public class Data {
 	 * @param rs
 	 * @throws SQLException
 	 */
-	protected void append(ResultSet rs) throws SQLException {
+	public void append(ResultSet rs) throws SQLException {
 
 		Object[] values = new Object[columnNames.length];
 		for (int i = 0; i < columnNames.length; i++) {

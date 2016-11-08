@@ -20,7 +20,8 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.dsf.dbxtract.cdc.Data;
-import com.dsf.dbxtract.cdc.Handler;
+import com.dsf.dbxtract.cdc.journal.JournalHandler;
+import com.dsf.dbxtract.cdc.journal.JournalStrategy;
 
 /**
  * <p>
@@ -35,7 +36,7 @@ import com.dsf.dbxtract.cdc.Handler;
  * @author fabio de santi
  *
  */
-public class TestHandler implements Handler {
+public class TestHandler implements JournalHandler {
 
 	private static Logger logger = LogManager.getLogger(TestHandler.class.getName());
 
@@ -60,5 +61,10 @@ public class TestHandler implements Handler {
 
 		// TODO: send data somewhere
 		System.out.println("[TestHandler.publish] batch size = " + data.getRows().size());
+	}
+
+	@Override
+	public JournalStrategy getStrategy() {
+		return JournalStrategy.DELETE;
 	}
 }
