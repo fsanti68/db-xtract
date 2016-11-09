@@ -39,6 +39,7 @@ import org.apache.zookeeper.KeeperException.NoNodeException;
 
 import com.dsf.dbxtract.cdc.Data;
 import com.dsf.dbxtract.cdc.Source;
+import com.dsf.utils.sql.DBUtils;
 import com.dsf.utils.sql.NamedParameterStatement;
 
 /**
@@ -152,18 +153,10 @@ public class JournalExecutor implements Runnable {
 				}
 				result.add(map);
 			}
-			rs.close();
-			ps.close();
 
 		} finally {
-			try {
-				if (rs != null)
-					rs.close();
-				if (ps != null)
-					ps.close();
-			} catch (Exception e) {
-				logger.error("Failed to get journal new keys", e);
-			}
+			DBUtils.close(rs);
+			DBUtils.close(ps);
 		}
 		return result;
 	}
@@ -197,8 +190,8 @@ public class JournalExecutor implements Runnable {
 						ps.setObject(k, keys.get(k));
 					}
 				}
-				if (rs != null)
-					rs.close();
+				DBUtils.close(rs);
+
 				rs = ps.executeQuery();
 				if (data == null) {
 					int cols = rs.getMetaData().getColumnCount();
@@ -215,10 +208,8 @@ public class JournalExecutor implements Runnable {
 			handler.publish(data);
 
 		} finally {
-			if (rs != null)
-				rs.close();
-			if (ps != null)
-				ps.close();
+			DBUtils.close(rs);
+			DBUtils.close(ps);
 		}
 	}
 
@@ -253,8 +244,7 @@ public class JournalExecutor implements Runnable {
 			logger.info(agentName + " :: " + rows.size() + " rows removed (" + handler.getJournalTable() + ")");
 
 		} finally {
-			if (ps != null)
-				ps.close();
+			DBUtils.close(ps);
 		}
 	}
 
@@ -331,12 +321,7 @@ public class JournalExecutor implements Runnable {
 					}
 
 				} finally {
-					if (conn != null) {
-						try {
-							conn.close();
-						} catch (Exception e) {
-						}
-					}
+					DBUtils.close(conn);
 					logger.debug(agentName + " :: lock release");
 					lock.release();
 					client.close();

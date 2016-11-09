@@ -13,12 +13,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Reference: http://www.javaworld.com/article/2077706/core-java/named-parameters-for-preparedstatement.html
+ * Reference:
+ * http://www.javaworld.com/article/2077706/core-java/named-parameters-for-preparedstatement.html
  * 
  * @author Adam Crume
  *
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class NamedParameterStatement {
 	/** The statement this object is wrapping. */
 	private final PreparedStatement statement;
