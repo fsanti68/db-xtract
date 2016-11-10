@@ -64,7 +64,7 @@ All tests are provided as JUnit test cases. Before starting tests, be sure that 
 
 	mvn test
 	
-Or... you can start database and/or ZooKeeper before the application and enjoy it's fault-tolerant behaviour.
+Or... you can start the application before database and/or ZooKeeper and enjoy it's fault-tolerant behaviour.
 
 
 ## Built with Maven
