@@ -23,8 +23,9 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
-import com.dsf.dbxtract.cdc.journal.JournalHandler;
 import com.dsf.dbxtract.cdc.journal.JournalExecutor;
+import com.dsf.dbxtract.cdc.journal.JournalHandler;
+import com.dsf.dbxtract.cdc.mon.Monitor;
 
 /**
  * Main application
@@ -78,6 +79,8 @@ public class App {
 	public static void main(String[] args) {
 
 		System.out.println("Welcome to db-xtract");
+
+		int monitorPort = 9000;
 		try {
 			App app = new App();
 			for (int i = 0; i < args.length - 1; i++) {
@@ -87,16 +90,22 @@ public class App {
 					PropertyConfigurator.configure(configFilename);
 					// an get db-xtract configuration
 					app.setConfig(new Config(configFilename));
+				} else if (args[i].equals("--monitor")) {
+					monitorPort = Integer.parseInt(args[++i]);
 				}
 			}
 
 			if (app.getConfig() == null) {
 				System.out.println("Parameter --config missing.");
-				System.out.println("Usage: java -jar dbxtract.jar --config </path/to/config.properties>");
+				System.out.println("Usage: java -jar dbxtract.jar --config </path/to/config.properties> --monitor <port>");
 				System.exit(1);
 			}
 
+			// Start CDC service
 			app.start();
+
+			// Starts monitor server
+			new Monitor(monitorPort);
 
 		} catch (Exception e) {
 			logger.fatal("Something really wrong happened", e);

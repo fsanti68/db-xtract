@@ -39,6 +39,7 @@ import org.apache.zookeeper.KeeperException.NoNodeException;
 
 import com.dsf.dbxtract.cdc.Data;
 import com.dsf.dbxtract.cdc.Source;
+import com.dsf.dbxtract.cdc.mon.Statistics;
 import com.dsf.utils.sql.DBUtils;
 import com.dsf.utils.sql.NamedParameterStatement;
 
@@ -55,6 +56,7 @@ public class JournalExecutor implements Runnable {
 	private static final String BASEPREFIX = "/dbxtract/cdc/";
 
 	private static Map<Source, BasicDataSource> dataSources = new HashMap<Source, BasicDataSource>();
+	private static Statistics statistics = new Statistics();
 	private String zookeeper;
 	private JournalHandler handler;
 	private Source source;
@@ -207,6 +209,8 @@ public class JournalExecutor implements Runnable {
 			}
 			handler.publish(data);
 
+			statistics.notifyRead(handler.getClass().getName(), data.getRows().size());
+
 		} finally {
 			DBUtils.close(rs);
 			DBUtils.close(ps);
@@ -302,6 +306,8 @@ public class JournalExecutor implements Runnable {
 		try {
 			if (lock.acquire(5, TimeUnit.SECONDS)) {
 				try {
+					statistics.touch(handler.getClass().getName());
+
 					logger.debug(agentName + " :: get database connection");
 					conn = getConnection();
 
