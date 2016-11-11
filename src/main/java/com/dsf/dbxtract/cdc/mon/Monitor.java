@@ -5,6 +5,12 @@ import java.net.InetSocketAddress;
 
 import com.sun.net.httpserver.HttpServer;
 
+/**
+ * Set's up a HTTP listener for statistics and administration tasks.
+ * 
+ * @author fabio de santi
+ * @version 0.1
+ */
 public class Monitor {
 
 	protected int serverPort = 8080;

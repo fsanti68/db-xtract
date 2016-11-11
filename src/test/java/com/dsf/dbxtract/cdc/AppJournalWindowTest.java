@@ -16,6 +16,11 @@
 
 package com.dsf.dbxtract.cdc;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,12 +32,16 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 
+import com.dsf.dbxtract.cdc.mon.Monitor;
+
 import junit.framework.TestCase;
 
 /**
  * Unit test for simple App.
  */
 public class AppJournalWindowTest extends TestCase {
+	
+	private int TEST_SIZE = 1000;
 
 	/**
 	 * Rigourous Test :-)
@@ -58,7 +67,7 @@ public class AppJournalWindowTest extends TestCase {
 		// Carrega os dados de origem
 		PreparedStatement ps = conn
 				.prepareStatement("insert into test (key1,key2,attr1,attr2,attr3) values (?,?,?,?,?)");
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < TEST_SIZE; i++) {
 			if ((i % 100) == 0) {
 				ps.executeBatch();
 			}
@@ -72,13 +81,9 @@ public class AppJournalWindowTest extends TestCase {
 		ps.executeBatch();
 		ps.close();
 
-		App app = new App();
-		app.setConfig(config);
-		app.start();
-
 		// Popula as tabelas de journal
 		ps = conn.prepareStatement("insert into j$test (key1,key2) values (?,?)");
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < TEST_SIZE; i++) {
 			if ((i % 500) == 0) {
 				ps.executeBatch();
 			}
@@ -96,15 +101,24 @@ public class AppJournalWindowTest extends TestCase {
 			System.out.println("maximum window_id loaded: " + maxWindowId);
 		}
 		rs.close();
+		
+		// start app
+		App app = new App();
+		app.setConfig(config);
+		app.start();
+
+		// starts monitor
+		new Monitor(9123);
 
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 		CuratorFramework client = CuratorFrameworkFactory.newClient(config.getZooKeeper(), retryPolicy);
 		client.start();
-
+		String zkKey = "/dbxtract/cdc/" + source.getName() + "/J$TEST/lastWindowId";
+		if (client.checkExists().forPath(zkKey) != null)
+			client.delete().forPath(zkKey);
 		while (true) {
 			Thread.sleep(1000);
 
-			String zkKey = "/dbxtract/cdc/" + source.getName() + "/J$TEST/lastWindowId";
 			try {
 				Long lastWindowId = Long.parseLong(new String(client.getData().forPath(zkKey)));
 				if (maxWindowId.longValue() == lastWindowId.longValue())
@@ -116,5 +130,32 @@ public class AppJournalWindowTest extends TestCase {
 		}
 		conn.close();
 		ds.close();
+	}
+
+	public void testInfoStatistics() throws IOException {
+
+		URL obj = new URL("http://localhost:9123/info");
+		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+		// optional default is GET
+		con.setRequestMethod("GET");
+
+		// add request header
+		con.setRequestProperty("User-Agent", "Mozilla/5.0");
+
+		int responseCode = con.getResponseCode();
+		assertEquals(responseCode, 200);
+
+		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+		String inputLine;
+		StringBuffer response = new StringBuffer();
+		while ((inputLine = in.readLine()) != null) {
+			response.append(inputLine);
+		}
+		in.close();
+		String s = response.toString();
+		System.out.println(s);
+		assertTrue(s.contains("\"readCount\":" + TEST_SIZE + "}"));
+		assertTrue(s.startsWith("{\"handlers\":[{\"name\":"));
 	}
 }

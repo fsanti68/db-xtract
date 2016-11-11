@@ -2,9 +2,9 @@
 
 Welcome to the DB-Xtract!
 
-It is an attempt to create a scalable, fault-tolerant and flexible change data capture (<i>CDC</i>) tool. A this very first moment, it is providing journal-based <i>CDC</i>, but I want to add other mechanisms for more performance and lower resources consumption.
+It is an attempt to create a scalable, fault-tolerant and flexible change data capture (<i>CDC</i>) tool. At this very first moment, it is providing journal-based <i>CDC</i>, but I want to add other mechanisms for more performance and lower resources consumption.
 
-DB-Xtract can be distributed as concurrent <i>CDC</i> agents, providing scalability, availability and performance. It relies on Apache's ZooKeeper to coordinate data captures in a safe and still fast way.
+DB-Xtract can be distributed as concurrent <i>CDC</i> agents, providing scalability, availability and fault-tolerance. It relies on Apache's ZooKeeper to coordinate concurrent data captures in a safe and still performatic way.
 
 ## Getting Started
 
@@ -88,4 +88,4 @@ This project is licensed under the Apache License, Version 2.0 - see the [LICENS
 ## Acknowledgments
 
 * A special thanks to Flavio ([xboard](https://github.com/xboard)) that always share his bright wisdom.
-* Thanks to Adam Crume ([adamcrume](https://github.com/adamcrume)) that created a really useful NamedParameterStatement class.
+* Thanks to Adam Crume ([adamcrume](https://github.com/adamcrume)) that created a really useful *NamedParameterStatement* class.
