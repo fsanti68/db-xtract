@@ -39,7 +39,7 @@ You can create in your database two tables, that will act as source table and jo
 		key2 int not null
 	);
 
-Change the tests configuration to your own environment (<code>src/test/java/com/dsf/dbxtract/cdc/config-apptest.properties</code>):
+Change the tests configuration to your own environment (<code>src/test/java/com/dsf/dbxtract/cdc/config-app-journal-delete.properties</code> and <code>config-app-journal-window.properties</code>):
 
 	log4j.appender.A1=org.apache.log4j.ConsoleAppender
 	log4j.appender.A1.layout=org.apache.log4j.PatternLayout
@@ -58,9 +58,15 @@ Change the tests configuration to your own environment (<code>src/test/java/com/
 	## same handler repeated many time to simulate some concurrency
 	source.test.handlers=com.dsf.dbxtract.cdc.sample.TestHandler,com.dsf.dbxtract.cdc.sample.TestHandler
 
+#### But why 2 similar configuration files???
+
+DB-Xtract considers two different approaches to handling with journal tables: *DELETE* and *WINDOW*. The **delete** strategy removes from journal all references to already imported data. Instead, **window** strategy 'memorizes' the last processed journal entry and restarts from there in the next execution.
+
+Since both strategies are considered during automated unit tests, there are two configuration files used by theirs unit tests.
+
 ## Running the tests
 
-All tests are provided as JUnit test cases. Before starting tests, be sure that mysql (or your preferred database) and ZooKeeper are ready, running and configured in app's property file (<code>src/test/java/com/dsf/dbxtract/cdc/config-apptest.properties</code>).
+All tests are provided as JUnit test cases. Before starting tests, be sure that mysql (or your preferred database) and ZooKeeper are ready, running and configured in app's property file (<code>src/test/java/com/dsf/dbxtract/cdc/config-app-journal-delete.properties</code> or <code>config-app-journal-window.properties</code>).
 
 	mvn test
 	
@@ -79,7 +85,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 * **Fabio De Santi** - *Initial work* - [fsanti68](https://github.com/fsanti68)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/fsanti68/db-xtract/contributors) who participated in this project.
 
 ## License
 

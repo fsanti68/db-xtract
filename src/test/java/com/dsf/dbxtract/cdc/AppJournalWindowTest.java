@@ -40,7 +40,7 @@ import junit.framework.TestCase;
  * Unit test for simple App.
  */
 public class AppJournalWindowTest extends TestCase {
-	
+
 	private int TEST_SIZE = 1000;
 
 	/**
@@ -101,7 +101,7 @@ public class AppJournalWindowTest extends TestCase {
 			System.out.println("maximum window_id loaded: " + maxWindowId);
 		}
 		rs.close();
-		
+
 		// start app
 		App app = new App();
 		app.setConfig(config);
@@ -155,7 +155,8 @@ public class AppJournalWindowTest extends TestCase {
 		in.close();
 		String s = response.toString();
 		System.out.println(s);
-		assertTrue(s.contains("\"readCount\":" + TEST_SIZE + "}"));
-		assertTrue(s.startsWith("{\"handlers\":[{\"name\":"));
+		
+		assertTrue("unexpected response: " + s, s.startsWith("{\"handlers\":[{\"name\":"));
+		assertTrue("unexpected response: " + s, s.contains("\"readCount\":" + TEST_SIZE + "}"));
 	}
 }
