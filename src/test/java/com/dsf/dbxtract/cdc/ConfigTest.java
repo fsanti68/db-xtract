@@ -18,9 +18,15 @@ package com.dsf.dbxtract.cdc;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.dsf.dbxtract.cdc.Config;
-import com.dsf.dbxtract.cdc.Source;
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.codehaus.jackson.map.ObjectMapper;
+
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
 
 import junit.framework.TestCase;
@@ -42,11 +48,22 @@ public class ConfigTest extends TestCase {
 		fw.append("log4j.rootLogger=DEBUG,A1\nlog4j.appender.A1=org.apache.log4j.ConsoleAppender"
 				+ "\nlog4j.appender.A1.layout=org.apache.log4j.PatternLayout"
 				+ "\nlog4j.appender.A1.layout.ConversionPattern=%-4r [%t] %-5p %c %x - %m%n");
-		fw.append("\nzookeeper=").append(zookeeper).append("\ninterval=").append(Long.toString(interval))
-				.append("\nthread.pool.size=5").append("\nsources=test\nsource.test.connection=").append(connection)
-				.append("\nsource.test.driver=").append(driver).append("\nsource.test.user=root")
-				.append("\nsource.test.password=mysql").append("\nsource.test.handlers=").append(handler);
+		fw.append("\nzookeeper=").append(zookeeper).append("\nthread.pool.size=5");
 		fw.close();
+
+		Sources sources = new Sources();
+		sources.setInterval(interval);
+		List<String> handlers = new ArrayList<String>();
+		handlers.add(handler);
+		sources.getSources().add(new Source("test", connection, driver, "root", "mysql", handlers));
+		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+		CuratorFramework client = CuratorFrameworkFactory.newClient(zookeeper, retryPolicy);
+		client.start();
+		ObjectMapper mapper = new ObjectMapper();
+		byte[] value = mapper.writeValueAsBytes(sources);
+		client.setData().forPath(App.BASEPREFIX + "config", value);
+		client.close();
+
 		config = new Config(f.getAbsolutePath());
 		super.setUp();
 	}
@@ -55,20 +72,20 @@ public class ConfigTest extends TestCase {
 		assertNotNull(config);
 	}
 
-	public void testGetDataSources() {
-		assertTrue(config.getDataSources().size() == 1);
-		Source src = config.getDataSources().get(0);
+	public void testGetDataSources() throws Exception {
+		assertTrue(config.getDataSources().getSources().size() == 1);
+		Source src = config.getDataSources().getSources().get(0);
 		assertEquals(connection, src.getConnection());
 		assertEquals(driver, src.getDriver());
 	}
 
-	public void testGetHandlers() {
-		Source src = config.getDataSources().get(0);
-		assertEquals(handler, src.getHandlers());
+	public void testGetHandlers() throws Exception {
+		Source src = config.getDataSources().getSources().get(0);
+		assertEquals(handler, src.getHandlers().get(0));
 	}
 
-	public void testGetSourceByHandler() {
-		Source src = config.getDataSources().get(0);
+	public void testGetSourceByHandler() throws Exception {
+		Source src = config.getDataSources().getSources().get(0);
 		for (JournalHandler handler : config.getHandlers()) {
 			assertEquals(src, config.getSourceByHandler(handler));
 		}
@@ -78,8 +95,8 @@ public class ConfigTest extends TestCase {
 		assertEquals(zookeeper, config.getZooKeeper());
 	}
 
-	public void testGetInterval() {
-		assertEquals(interval, config.getInterval());
+	public void testGetInterval() throws Exception {
+		assertEquals(interval, config.getDataSources().getInterval());
 	}
 
 	public void testGetAgentName() {

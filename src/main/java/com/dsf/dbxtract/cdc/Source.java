@@ -16,13 +16,16 @@
 
 package com.dsf.dbxtract.cdc;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
 
 /**
  * Representa um banco de dados com tabelas a serem capturadas.
  * 
  * @author fabio de santi
- * @version 0.1
+ * @version 0.2
  */
 public class Source {
 
@@ -31,7 +34,7 @@ public class Source {
 	private String driver;
 	private String user;
 	private String password;
-	private String handlers;
+	private List<String> handlers;
 
 	/**
 	 * 
@@ -49,13 +52,17 @@ public class Source {
 	 *            comma-delimited class names implementing the interface
 	 *            {@link JournalHandler}
 	 */
-	public Source(String name, String connection, String driver, String user, String password, String handlers) {
+	public Source(String name, String connection, String driver, String user, String password, List<String> handlers) {
 		this.name = name;
 		this.connection = connection;
 		this.driver = driver;
 		this.user = user;
 		this.password = password;
 		this.handlers = handlers;
+	}
+	
+	public Source() {
+		
 	}
 
 	public String getName() {
@@ -78,7 +85,9 @@ public class Source {
 		return password;
 	}
 
-	public String getHandlers() {
+	public List<String> getHandlers() {
+		if (handlers == null)
+			handlers = new ArrayList<String>();
 		return handlers;
 	}
 

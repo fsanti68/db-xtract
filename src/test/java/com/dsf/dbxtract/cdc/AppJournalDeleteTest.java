@@ -19,8 +19,14 @@ package com.dsf.dbxtract.cdc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Arrays;
 
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import junit.framework.TestCase;
 
@@ -29,16 +35,35 @@ import junit.framework.TestCase;
  */
 public class AppJournalDeleteTest extends TestCase {
 
+	@Override
+	protected void setUp() throws Exception {
+
+		Sources sources = new Sources();
+		sources.setInterval(1000L);
+		sources.getSources().add(new Source("test", "jdbc:mysql://localhost:3306/smartboard", "org.gjt.mm.mysql.Driver",
+				"root", "mysql",
+				Arrays.asList("com.dsf.dbxtract.cdc.sample.TestHandler", "com.dsf.dbxtract.cdc.sample.TestHandler")));
+		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+		CuratorFramework client = CuratorFrameworkFactory.newClient("localhost:2181", retryPolicy);
+		client.start();
+		ObjectMapper mapper = new ObjectMapper();
+		byte[] value = mapper.writeValueAsBytes(sources);
+		client.setData().forPath(App.BASEPREFIX + "config", value);
+		client.close();
+
+		super.setUp();
+	}
+
 	/**
 	 * Rigourous Test :-)
 	 */
 	public void testApp() throws Exception {
 
-		final Config config = new Config(
-				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-delete.properties"));
+		final Config config = new Config(getClass().getClassLoader()
+				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-delete.properties"));
 
 		BasicDataSource ds = new BasicDataSource();
-		Source source = config.getDataSources().get(0);
+		Source source = config.getDataSources().getSources().get(0);
 		ds.setDriverClassName(source.getDriver());
 		ds.setUsername(source.getUser());
 		ds.setPassword(source.getPassword());

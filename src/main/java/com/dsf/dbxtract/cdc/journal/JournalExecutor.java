@@ -37,6 +37,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 
+import com.dsf.dbxtract.cdc.App;
 import com.dsf.dbxtract.cdc.Data;
 import com.dsf.dbxtract.cdc.Source;
 import com.dsf.dbxtract.cdc.mon.Statistics;
@@ -52,8 +53,6 @@ import com.dsf.utils.sql.NamedParameterStatement;
 public class JournalExecutor implements Runnable {
 
 	private static final Logger logger = LogManager.getLogger(JournalExecutor.class.getName());
-
-	private static final String BASEPREFIX = "/dbxtract/cdc/";
 
 	private static Map<Source, BasicDataSource> dataSources = new HashMap<Source, BasicDataSource>();
 	private static Statistics statistics = new Statistics();
@@ -97,7 +96,7 @@ public class JournalExecutor implements Runnable {
 
 	private String getPrefix() {
 		if (prefix == null) {
-			prefix = new StringBuilder(BASEPREFIX).append(source.getName()).append('/')
+			prefix = new StringBuilder(App.BASEPREFIX).append(source.getName()).append('/')
 					.append(handler.getJournalTable()).append('/').toString();
 		}
 		return prefix;

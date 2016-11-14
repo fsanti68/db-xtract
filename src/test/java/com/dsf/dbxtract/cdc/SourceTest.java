@@ -16,11 +16,20 @@
 
 package com.dsf.dbxtract.cdc;
 
+import java.util.Arrays;
+
 import junit.framework.TestCase;
 
 public class SourceTest extends TestCase {
 
-	private static Source src = new Source("a", "c", "d", "u", "p", "h1,h2,h3, h4 ,com.t.h5");
+	private static Source src;
+
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
+
+		src = new Source("a", "c", "d", "u", "p", Arrays.asList("h1", "h2", "h3", "h4", "com.t.h5"));
+	}
 
 	public void testSource() {
 		assertNotNull(src);
@@ -47,7 +56,7 @@ public class SourceTest extends TestCase {
 	}
 
 	public void testGetHandlers() {
-		assertEquals("h1,h2,h3, h4 ,com.t.h5", src.getHandlers());
+		assertEquals(src.getHandlers().size(), 5);
+		assertEquals(src.getHandlers().get(1), "h2");
 	}
-
 }

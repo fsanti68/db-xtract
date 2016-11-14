@@ -21,22 +21,25 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
 
 /**
  * 
  * @author fabio de santi
- * @version 0.1
+ * @version 0.2
  */
 public class Config {
 
@@ -44,19 +47,28 @@ public class Config {
 
 	private Properties props;
 	private String agentName = null;
-	private List<Source> sources = null;
+	private Sources sources = null;
 	private Map<JournalHandler, Source> handlerMap = new HashMap<JournalHandler, Source>();
 
 	/**
+	 * Loads configuration file.
 	 * 
-	 * @param source
+	 * @param path
+	 *            file/path name
 	 * @throws Exception
 	 */
-	public Config(String source) throws Exception {
+	public Config(String path) throws Exception {
 
-		this(new FileInputStream(new File(source)));
+		this(new FileInputStream(new File(path)));
 	}
 
+	/**
+	 * Loads configuration from a stream.
+	 * 
+	 * @param source
+	 *            configuration source stream
+	 * @throws Exception
+	 */
 	public Config(InputStream source) throws Exception {
 		Properties props = new Properties();
 		props.load(source);
@@ -68,9 +80,8 @@ public class Config {
 	private void init() throws Exception {
 
 		// Prepare a handler's list and respective data sources
-		for (Source source : getDataSources()) {
-			String[] handlers = source.getHandlers().split(",");
-			for (String handlerName : handlers) {
+		for (Source source : getDataSources().getSources()) {
+			for (String handlerName : source.getHandlers()) {
 				JournalHandler handler;
 				try {
 					handler = (JournalHandler) Class.forName(handlerName).newInstance();
@@ -85,23 +96,25 @@ public class Config {
 	}
 
 	/**
-	 * The sources list is kept un the configuration file, under the entry
-	 * 'sources'. Many data sources can be declared, separated by comma.
+	 * Data sources are a list of database connections and its associated
+	 * handler's class names. Data sources are kept in ZooKeeper, under the
+	 * <i>config</i> entry.
 	 * 
 	 * @return data sources list
+	 * @throws Exception
 	 */
-	public List<Source> getDataSources() {
+	public Sources getDataSources() throws Exception {
 
 		if (sources == null) {
-			sources = new ArrayList<Source>();
-			String[] a = props.getProperty("sources").split(",");
-			for (String s : a) {
-				String cat = s.trim();
-				sources.add(new Source(cat, props.getProperty("source." + cat + ".connection"),
-						props.getProperty("source." + cat + ".driver"), props.getProperty("source." + cat + ".user"),
-						props.getProperty("source." + cat + ".password"),
-						props.getProperty("source." + cat + ".handlers")));
-			}
+			RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+			CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
+			client.start();
+
+			byte[] json = client.getData().forPath(App.BASEPREFIX + "config");
+			client.close();
+
+			ObjectMapper mapper = new ObjectMapper();
+			sources = mapper.readValue(json, Sources.class);
 		}
 		return sources;
 	}
@@ -132,23 +145,6 @@ public class Config {
 		if (s == null || s.isEmpty())
 			throw new Exception("zookeeper is a required configuration parameter!");
 		return s;
-	}
-
-	/**
-	 * 
-	 * @return milliseconds between capture cycles
-	 */
-	public long getInterval() {
-		long interval = 5000L;
-		String _interval = props.getProperty("interval");
-		if (_interval != null && !_interval.isEmpty()) {
-			try {
-				interval = Long.parseLong(_interval);
-			} catch (NumberFormatException nfe) {
-				logger.warn("Invalid config 'interval' = " + _interval + " -> assuming " + interval);
-			}
-		}
-		return interval;
 	}
 
 	/**
@@ -194,13 +190,16 @@ public class Config {
 
 	private void report() {
 		logger.info("Loaded configuration: ");
-		logger.info("[Data Sources      ] " + getDataSources().size() + " loaded");
+		try {
+			logger.info("[Data Sources      ] " + getDataSources().getSources().size() + " loaded");
+		} catch (Exception e) {
+			logger.info("[Data Sources      ] failed - " + e.getMessage());
+		}
 		try {
 			logger.info("[Zookeeper address ] " + getZooKeeper());
 		} catch (Exception e) {
-			logger.info("[Zookeeper address ] failed");
+			logger.info("[Zookeeper address ] failed - " + e.getMessage());
 		}
-		logger.info("[Execution Interval] " + getInterval() + " milliseconds");
 		logger.info("[Thread pool size  ] " + getThreadPoolSize());
 	}
 }

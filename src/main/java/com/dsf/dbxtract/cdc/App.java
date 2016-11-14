@@ -36,6 +36,8 @@ import com.dsf.dbxtract.cdc.mon.Monitor;
 public class App {
 
 	private static Logger logger = LogManager.getLogger(App.class.getName());
+	
+	public static final String BASEPREFIX = "/dbxtract/cdc/";
 
 	private Config config = null;
 
@@ -53,7 +55,7 @@ public class App {
 		String zkConnection = config.getZooKeeper();
 
 		// Get interval (in milliseconds) between executions
-		long interval = config.getInterval();
+		long interval = config.getDataSources().getInterval();
 
 		ScheduledExecutorService scheduledService = Executors.newScheduledThreadPool(config.getThreadPoolSize());
 
