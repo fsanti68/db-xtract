@@ -54,8 +54,8 @@ public class JournalExecutor implements Runnable {
 
 	private static final Logger logger = LogManager.getLogger(JournalExecutor.class.getName());
 
-	private static Map<Source, BasicDataSource> dataSources = new HashMap<Source, BasicDataSource>();
-	private static Statistics statistics = new Statistics();
+	private Map<Source, BasicDataSource> dataSources = new HashMap<Source, BasicDataSource>();
+	private Statistics statistics = null;
 	private String zookeeper;
 	private JournalHandler handler;
 	private Source source;
@@ -88,6 +88,9 @@ public class JournalExecutor implements Runnable {
 			ds.setUrl(source.getConnection());
 			dataSources.put(source, ds);
 		}
+
+		if (statistics == null)
+			statistics = new Statistics();
 	}
 
 	private Connection getConnection() throws SQLException {
@@ -97,7 +100,7 @@ public class JournalExecutor implements Runnable {
 	private String getPrefix() {
 		if (prefix == null) {
 			prefix = new StringBuilder(App.BASEPREFIX).append(source.getName()).append('/')
-					.append(handler.getJournalTable()).append('/').toString();
+					.append(handler.getJournalTable()).toString();
 		}
 		return prefix;
 	}
@@ -105,7 +108,7 @@ public class JournalExecutor implements Runnable {
 	private Long getLastWindowId(CuratorFramework client) throws Exception {
 
 		try {
-			String s = new String(client.getData().forPath(getPrefix() + "lastWindowId"));
+			String s = new String(client.getData().forPath(getPrefix() + "/lastWindowId"));
 			return s == null ? 0L : Long.parseLong(s);
 
 		} catch (NoNodeException nne) {
@@ -208,8 +211,6 @@ public class JournalExecutor implements Runnable {
 			}
 			handler.publish(data);
 
-			statistics.notifyRead(handler.getClass().getName(), data.getRows().size());
-
 		} finally {
 			DBUtils.close(rs);
 			DBUtils.close(ps);
@@ -269,13 +270,14 @@ public class JournalExecutor implements Runnable {
 			}
 		}
 
-		String k = getPrefix() + "lastWindowId";
+		String k = getPrefix() + "/lastWindowId";
 		String s = lastWindowId.toString();
 		try {
 			if (client.checkExists().forPath(k) == null)
 				client.create().forPath(k);
 
 			client.setData().forPath(k, s.getBytes());
+
 		} catch (Exception e) {
 			logger.error("failed to update last window_id", e);
 		}
@@ -299,14 +301,12 @@ public class JournalExecutor implements Runnable {
 
 		// Uses the distributed lock recipe of ZooKeeper to avoid concurrency
 		Connection conn = null;
-		String lockPath = getPrefix() + "lock";
+		String lockPath = getPrefix() + "/lock";
 		InterProcessMutex lock = new InterProcessMutex(client, lockPath);
 		logger.debug(agentName + " :: waiting lock from " + zookeeper + lockPath);
 		try {
 			if (lock.acquire(5, TimeUnit.SECONDS)) {
 				try {
-					statistics.touch(handler.getClass().getName());
-
 					logger.debug(agentName + " :: get database connection");
 					conn = getConnection();
 
@@ -324,6 +324,8 @@ public class JournalExecutor implements Runnable {
 						// Remove from journal imported & published data
 						deleteFromJournal(conn, rows);
 					}
+
+					statistics.update(client, handler.getClass().getName(), rows.size());
 
 				} finally {
 					DBUtils.close(conn);

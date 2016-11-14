@@ -40,6 +40,7 @@ public class App {
 	public static final String BASEPREFIX = "/dbxtract/cdc/";
 
 	private Config config = null;
+	private ScheduledExecutorService scheduledService = null;
 
 	public void setConfig(Config config) {
 		this.config = config;
@@ -57,7 +58,7 @@ public class App {
 		// Get interval (in milliseconds) between executions
 		long interval = config.getDataSources().getInterval();
 
-		ScheduledExecutorService scheduledService = Executors.newScheduledThreadPool(config.getThreadPoolSize());
+		scheduledService = Executors.newScheduledThreadPool(config.getThreadPoolSize());
 
 		// Prepare the task's list. Each handler becomes a task.
 		for (JournalHandler handler : config.getHandlers()) {
@@ -66,6 +67,11 @@ public class App {
 					config.getSourceByHandler(handler));
 			scheduledService.scheduleAtFixedRate(executor, 0L, interval, TimeUnit.MILLISECONDS);
 		}
+	}
+	
+	public void stop() {
+		if (scheduledService != null)
+			scheduledService.shutdown();
 	}
 
 	/**
@@ -107,7 +113,7 @@ public class App {
 			app.start();
 
 			// Starts monitor server
-			new Monitor(monitorPort);
+			new Monitor(monitorPort, app.getConfig());
 
 		} catch (Exception e) {
 			logger.fatal("Something really wrong happened", e);

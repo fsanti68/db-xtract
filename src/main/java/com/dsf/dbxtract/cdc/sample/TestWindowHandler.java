@@ -60,7 +60,7 @@ public class TestWindowHandler implements JournalHandler {
 				+ " rows");
 
 		// TODO: send data somewhere
-		System.out.println("[TestHandler.publish] batch size = " + data.getRows().size());
+		System.out.println("[TestWindowHandler.publish] batch size = " + data.getRows().size());
 	}
 
 	@Override

@@ -17,6 +17,7 @@
 package com.dsf.dbxtract.cdc;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
@@ -60,9 +61,9 @@ public class Source {
 		this.password = password;
 		this.handlers = handlers;
 	}
-	
+
 	public Source() {
-		
+
 	}
 
 	public String getName() {
@@ -93,7 +94,17 @@ public class Source {
 
 	@Override
 	public String toString() {
-		return "Source [name=" + name + ", connection=" + connection + ", driver=" + driver + ", user=" + user + "/"
-				+ password + "]";
+		StringBuilder sb = new StringBuilder();
+		sb.append("Source {name=").append(name).append(", connection=").append(connection).append(", driver=")
+				.append(driver).append(", user=").append(user).append(", handlers=[");
+		Iterator<String> it = getHandlers().iterator();
+		while (it.hasNext()) {
+			String k = it.next();
+			sb.append("\'").append(k).append("\'");
+			if (it.hasNext())
+				sb.append(", ");
+		}
+		sb.append("]}");
+		return sb.toString();
 	}
 }

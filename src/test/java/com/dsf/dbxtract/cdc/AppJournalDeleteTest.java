@@ -26,6 +26,7 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.log4j.PropertyConfigurator;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import junit.framework.TestCase;
@@ -50,6 +51,9 @@ public class AppJournalDeleteTest extends TestCase {
 		byte[] value = mapper.writeValueAsBytes(sources);
 		client.setData().forPath(App.BASEPREFIX + "config", value);
 		client.close();
+
+		PropertyConfigurator
+				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal-delete.properties"));
 
 		super.setUp();
 	}

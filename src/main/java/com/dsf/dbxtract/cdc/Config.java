@@ -48,7 +48,7 @@ public class Config {
 	private Properties props;
 	private String agentName = null;
 	private Sources sources = null;
-	private Map<JournalHandler, Source> handlerMap = new HashMap<JournalHandler, Source>();
+	private Map<JournalHandler, Source> handlerMap = null;
 
 	/**
 	 * Loads configuration file.
@@ -80,6 +80,7 @@ public class Config {
 	private void init() throws Exception {
 
 		// Prepare a handler's list and respective data sources
+		handlerMap = new HashMap<JournalHandler, Source>();
 		for (Source source : getDataSources().getSources()) {
 			for (String handlerName : source.getHandlers()) {
 				JournalHandler handler;
@@ -201,5 +202,22 @@ public class Config {
 			logger.info("[Zookeeper address ] failed - " + e.getMessage());
 		}
 		logger.info("[Thread pool size  ] " + getThreadPoolSize());
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Config [dataSources=");
+		try {
+			sb.append(getDataSources().toString());
+		} catch (Exception e) {
+		}
+		sb.append(", zookeeper=");
+		try {
+			sb.append(getZooKeeper());
+		} catch (Exception e) {
+		}
+		sb.append(", threadPoolSize=" + getThreadPoolSize()).append(']');
+		return sb.toString();
 	}
 }

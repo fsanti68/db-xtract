@@ -2,13 +2,7 @@ package com.dsf.dbxtract.cdc.mon;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -17,62 +11,55 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
+
+import com.dsf.dbxtract.cdc.App;
+
 /**
  * Session store for basic Handler's statistics.
  * 
  * @author fabio de santi
- * @version 0.1
+ * @version 0.2
  */
-@XmlRootElement
-@XmlType(propOrder = { "handlers" })
 public class Statistics {
 
-	private static ReentrantReadWriteLock rrwl = new ReentrantReadWriteLock();
-	private static Map<String, StatEntry> map = new HashMap<String, StatEntry>();
+	private static final Logger logger = LogManager.getLogger(Statistics.class.getName());
+	protected static final String ZOOPATH = App.BASEPREFIX + "statistics";
 
-	/**
-	 * 
-	 * @param handler
-	 *            handler's name
-	 * @param rows
-	 *            number of rows captured
-	 */
-	public void notifyRead(String handler, int rows) {
+	private ObjectMapper mapper;
 
-		WriteLock lock = rrwl.writeLock();
-		lock.lock();
-		try {
-			StatEntry entry = map.get(handler);
-			if (entry == null)
-				entry = new StatEntry(handler);
-			entry.increment(rows);
-			map.put(handler, entry);
-
-		} finally {
-			lock.unlock();
-		}
+	public Statistics() {
+		this.mapper = new ObjectMapper();
 	}
 
 	/**
-	 * Signal that a capture was attempt.
+	 * Updates statistics for a given handler.
 	 * 
+	 * @param client
+	 *            zookeeper's connection
 	 * @param handler
 	 *            handler's name
+	 * @param rows
+	 *            number of rows captured. If zero, only lastSeek is updated,
+	 *            otherwise updates also lastRead.
 	 */
-	public void touch(String handler) {
+	public void update(CuratorFramework client, String handler, int rows) {
 
-		WriteLock lock = rrwl.writeLock();
-		lock.lock();
+		String path = ZOOPATH + "/" + handler;
 		try {
-			StatEntry entry = map.get(handler);
-			if (entry == null) {
-				entry = new StatEntry(handler);
-			}
-			entry.touch();
-			map.put(handler, entry);
+			StatEntry entry = get(client, handler);
+			entry.increment(rows);
+			byte[] b = mapper.writeValueAsBytes(entry);
+			if (client.checkExists().forPath(path) == null)
+				client.create().forPath(path);
+			client.setData().forPath(path, b);
 
-		} finally {
-			lock.unlock();
+		} catch (Exception e) {
+			logger.error("Failed to save " + path, e);
+			return;
 		}
 	}
 
@@ -83,25 +70,20 @@ public class Statistics {
 	 * @return {@link StatEntry} object with basic statistics for the given
 	 *         handler
 	 */
-	public StatEntry get(String handler) {
-		ReadLock lock = rrwl.readLock();
-		lock.lock();
+	public StatEntry get(CuratorFramework client, String handler) {
+		String path = ZOOPATH + "/" + handler;
 		try {
-			return map.get(handler).clone();
-		} finally {
-			lock.unlock();
-		}
-	}
+			if (client.checkExists().forPath(ZOOPATH) == null)
+				client.create().forPath(ZOOPATH);
+			byte[] d = client.getData().forPath(path);
+			StatEntry entry = mapper.readValue(d, StatEntry.class);
+			if (entry == null)
+				entry = new StatEntry(handler);
+			return entry;
 
-	public Collection<Statistics.StatEntry> getHandlers() {
-		ReadLock lock = rrwl.readLock();
-		lock.lock();
-		try {
-			Map<String, StatEntry> _m = new HashMap<String, StatEntry>();
-			_m.putAll(map);
-			return _m.values();
-		} finally {
-			lock.unlock();
+		} catch (Exception e) {
+			logger.error("Failed to obtain " + path, e);
+			return new StatEntry(handler);
 		}
 	}
 
@@ -124,6 +106,9 @@ public class Statistics {
 		private Date lastRead;
 		@XmlElement
 		private long readCount = 0L;
+		
+		public StatEntry() {
+		}
 
 		public StatEntry(String handler) {
 			this.name = handler;
@@ -146,12 +131,10 @@ public class Statistics {
 		}
 
 		protected void increment(int rows) {
-			this.readCount += rows;
-			this.lastRead = new Date();
-		}
-
-		protected void touch() {
 			this.lastSeek = new Date();
+			this.readCount += rows;
+			if (rows > 0)
+				this.lastRead = new Date();
 		}
 
 		public StatEntry clone() {

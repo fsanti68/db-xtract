@@ -25,12 +25,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -45,21 +47,31 @@ public class AppJournalWindowTest extends TestCase {
 
 	private int TEST_SIZE = 1000;
 
+	private Config config;
+	private CuratorFramework client;
+
 	@Override
 	protected void setUp() throws Exception {
 
 		Sources sources = new Sources();
 		sources.setInterval(1000L);
-		sources.getSources().add(new Source("test", "jdbc:mysql://localhost:3306/smartboard", "org.gjt.mm.mysql.Driver",
-				"root", "mysql",
-				Arrays.asList("com.dsf.dbxtract.cdc.sample.TestWindowHandler", "com.dsf.dbxtract.cdc.sample.TestWindowHandler")));
+		sources.getSources()
+				.add(new Source("test", "jdbc:mysql://localhost:3306/smartboard", "org.gjt.mm.mysql.Driver", "root",
+						"mysql", Arrays.asList("com.dsf.dbxtract.cdc.sample.TestWindowHandler",
+								"com.dsf.dbxtract.cdc.sample.TestWindowHandler")));
+
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-		CuratorFramework client = CuratorFrameworkFactory.newClient("localhost:2181", retryPolicy);
+		client = CuratorFrameworkFactory.newClient("localhost:2181", retryPolicy);
 		client.start();
 		ObjectMapper mapper = new ObjectMapper();
 		byte[] value = mapper.writeValueAsBytes(sources);
 		client.setData().forPath(App.BASEPREFIX + "config", value);
-		client.close();
+		
+		config = new Config(getClass().getClassLoader()
+				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-window.properties"));
+		
+		PropertyConfigurator
+				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal-window.properties"));
 
 		super.setUp();
 	}
@@ -68,9 +80,6 @@ public class AppJournalWindowTest extends TestCase {
 	 * Rigourous Test :-)
 	 */
 	public void testApp() throws Exception {
-
-		final Config config = new Config(getClass().getClassLoader()
-				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-window.properties"));
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().getSources().get(0);
@@ -123,20 +132,26 @@ public class AppJournalWindowTest extends TestCase {
 		}
 		rs.close();
 
-		// start app
-		App app = new App();
-		app.setConfig(config);
-		app.start();
-
-		// starts monitor
-		new Monitor(9123);
-
-		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-		CuratorFramework client = CuratorFrameworkFactory.newClient(config.getZooKeeper(), retryPolicy);
-		client.start();
+		// Clean previous statistics and states
+		if (client.checkExists().forPath("/dbxtract/cdc/statistics") != null) {
+			List<String> children = client.getChildren().forPath("/dbxtract/cdc/statistics");
+			for (String k : children)
+				client.delete().forPath("/dbxtract/cdc/statistics/" + k);
+			client.delete().forPath("/dbxtract/cdc/statistics");
+		}
 		String zkKey = "/dbxtract/cdc/" + source.getName() + "/J$TEST/lastWindowId";
 		if (client.checkExists().forPath(zkKey) != null)
 			client.delete().forPath(zkKey);
+
+		// start app
+		App app = new App();
+		app.setConfig(config);
+		System.out.println(config.toString());
+		app.start();
+
+		// starts monitor
+		new Monitor(9123, config);
+
 		while (true) {
 			Thread.sleep(1000);
 
@@ -176,8 +191,15 @@ public class AppJournalWindowTest extends TestCase {
 		in.close();
 		String s = response.toString();
 		System.out.println(s);
-		
+
 		assertTrue("unexpected response: " + s, s.startsWith("{\"handlers\":[{\"name\":"));
 		assertTrue("unexpected response: " + s, s.contains("\"readCount\":" + TEST_SIZE + "}"));
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
+
+		client.close();
+		super.tearDown();
 	}
 }

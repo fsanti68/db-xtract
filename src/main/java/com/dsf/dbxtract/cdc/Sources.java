@@ -17,6 +17,7 @@
 package com.dsf.dbxtract.cdc;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -48,5 +49,21 @@ public class Sources {
 
 	public void setInterval(long millisecs) {
 		this.interval = millisecs;
+	}
+
+	@Override
+	public String toString() {
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("Sources [interval=").append(interval).append(", sources=[");
+		Iterator<Source> it = getSources().iterator();
+		while (it.hasNext()) {
+			Source src = it.next();
+			sb.append(src.toString());
+			if (it.hasNext())
+				sb.append(", ");
+		}
+		sb.append("]}");
+		return sb.toString();
 	}
 }
