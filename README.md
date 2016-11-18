@@ -23,6 +23,7 @@ Download the project with:
 	
 	mvn compile
 	
+**Note**: The <code>master</code> branch may be in an unstable or even broken state during development. Please use [releases](https://github.com/fsanti68/db-xtract/releases) instead of the <code>master</code> branch in order to get stable binaries.
 
 You can create in your database two tables, that will act as source table and journal table:
 
@@ -39,7 +40,7 @@ You can create in your database two tables, that will act as source table and jo
 		key2 int not null
 	);
 
-Change the tests configuration to your own environment (<code>src/test/java/com/dsf/dbxtract/cdc/config-app-journal-delete.properties</code> and <code>config-app-journal-window.properties</code>):
+Create your own configuration file:
 
 	log4j.appender.A1=org.apache.log4j.ConsoleAppender
 	log4j.appender.A1.layout=org.apache.log4j.PatternLayout
@@ -47,26 +48,29 @@ Change the tests configuration to your own environment (<code>src/test/java/com/
 	
 	zookeeper=localhost:2181
 	thread.pool.size=3
-	interval=5000
+
+Configure remaining parameters (that are shared among all DB-Xtract nodes):
+
+1) create a new datasource (essencially a database connection):
+
+	$ java -jar dbxtract.jar --config myconfig.properties --source-add test jdbc:mysql://localhost:3306/mytestdb org.gjt.mm.mysql.Driver root mysql
 	
-	sources=test
-	source.test.connection=jdbc:mysql://localhost:3306/mytestdb
-	source.test.driver=org.gjt.mm.mysql.Driver
-	source.test.user=root
-	source.test.password=mysql
+2) assign a new CDC handler for this datasource:
+
+	$ java -jar dbxtract.jar --config myconfig.properties --handler-add test  com.dsf.dbxtract.cdc.sample.TestHandler
 	
-	## same handler repeated many time to simulate some concurrency
-	source.test.handlers=com.dsf.dbxtract.cdc.sample.TestHandler,com.dsf.dbxtract.cdc.sample.TestHandler
+3) check your new configuration:
 
-#### But why 2 similar configuration files???
+	$ java -jar dbxtract.jar --config myconfig.properties --list
+	
+4) start the agent:
 
-DB-Xtract considers two different approaches to handling with journal tables: *DELETE* and *WINDOW*. The **delete** strategy removes from journal all references to already imported data. Instead, **window** strategy 'memorizes' the last processed journal entry and restarts from there in the next execution.
+	$ java -jar dbxtract.jar --config myconfig.properties --start
 
-Since both strategies are considered during automated unit tests, there are two configuration files used by theirs unit tests.
 
 ## Running the tests
 
-All tests are provided as JUnit test cases. Before starting tests, be sure that mysql (or your preferred database) and ZooKeeper are ready, running and configured in app's property file (<code>src/test/java/com/dsf/dbxtract/cdc/config-app-journal-delete.properties</code> or <code>config-app-journal-window.properties</code>).
+All tests are provided as JUnit test cases. Before starting tests, be sure that mysql (or your preferred database) and ZooKeeper are ready, running and configured in app's property file (<code>src/test/java/com/dsf/dbxtract/cdc/config-app-journal.properties</code>).
 
 	mvn test
 	

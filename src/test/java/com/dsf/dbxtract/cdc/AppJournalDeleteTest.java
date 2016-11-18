@@ -49,11 +49,11 @@ public class AppJournalDeleteTest extends TestCase {
 		client.start();
 		ObjectMapper mapper = new ObjectMapper();
 		byte[] value = mapper.writeValueAsBytes(sources);
-		client.setData().forPath(App.BASEPREFIX + "config", value);
+		client.setData().forPath(App.BASEPREFIX + "/config", value);
 		client.close();
 
 		PropertyConfigurator
-				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal-delete.properties"));
+				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 
 		super.setUp();
 	}
@@ -64,7 +64,7 @@ public class AppJournalDeleteTest extends TestCase {
 	public void testApp() throws Exception {
 
 		final Config config = new Config(getClass().getClassLoader()
-				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-delete.properties"));
+				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().getSources().get(0);

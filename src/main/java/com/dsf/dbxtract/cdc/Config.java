@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +33,8 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.CreateMode;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
@@ -39,7 +42,7 @@ import com.dsf.dbxtract.cdc.journal.JournalHandler;
 /**
  * 
  * @author fabio de santi
- * @version 0.2
+ * @version 0.3
  */
 public class Config {
 
@@ -47,7 +50,6 @@ public class Config {
 
 	private Properties props;
 	private String agentName = null;
-	private Sources sources = null;
 	private Map<JournalHandler, Source> handlerMap = null;
 
 	/**
@@ -74,26 +76,44 @@ public class Config {
 		props.load(source);
 		this.props = props;
 		init();
-		report();
 	}
 
 	private void init() throws Exception {
 
 		// Prepare a handler's list and respective data sources
 		handlerMap = new HashMap<JournalHandler, Source>();
-		for (Source source : getDataSources().getSources()) {
-			for (String handlerName : source.getHandlers()) {
-				JournalHandler handler;
-				try {
-					handler = (JournalHandler) Class.forName(handlerName).newInstance();
-					handlerMap.put(handler, source);
+		Sources sources = getDataSources();
+		if (sources != null) {
+			for (Source source : sources.getSources()) {
+				for (String handlerName : source.getHandlers()) {
+					JournalHandler handler;
+					try {
+						handler = (JournalHandler) Class.forName(handlerName).newInstance();
+						handlerMap.put(handler, source);
 
-				} catch (Exception e) {
-					logger.fatal("Unable to instantiate a handler: " + handlerName, e);
-					throw e;
+					} catch (Exception e) {
+						logger.fatal("Unable to instantiate a handler: " + handlerName, e);
+						throw e;
+					}
 				}
 			}
+
+		} else {
+			logger.warn("No datasources defined");
 		}
+	}
+
+	private CuratorFramework getClientForSources() throws Exception {
+
+		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+		CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
+		client.start();
+
+		String path = App.BASEPREFIX + "/config";
+		if (client.checkExists().forPath(path) == null)
+			client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
+
+		return client;
 	}
 
 	/**
@@ -106,18 +126,43 @@ public class Config {
 	 */
 	public Sources getDataSources() throws Exception {
 
-		if (sources == null) {
-			RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-			CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
-			client.start();
+		String path = App.BASEPREFIX + "/config";
+		CuratorFramework client = getClientForSources();
+		if (client.checkExists().forPath(path) == null)
+			throw new Exception("No configuration found (zk): " + path);
+		byte[] json = client.getData().forPath(path);
+		client.close();
+		if (json == null || json.length == 0)
+			return null;
 
-			byte[] json = client.getData().forPath(App.BASEPREFIX + "config");
-			client.close();
-
+		try {
 			ObjectMapper mapper = new ObjectMapper();
-			sources = mapper.readValue(json, Sources.class);
+			return mapper.readValue(json, Sources.class);
+
+		} catch (JsonMappingException jme) {
+			logger.error("Invalid config data: " + new String(json));
+
+			return null;
 		}
-		return sources;
+	}
+
+	/**
+	 * 
+	 * @param sources
+	 * @throws Exception
+	 */
+	private void setDataSources(Sources sources) throws Exception {
+
+		String path = App.BASEPREFIX + "/config";
+		CuratorFramework client = getClientForSources();
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			byte[] data = mapper.writeValueAsBytes(sources);
+			client.setData().forPath(path, data);
+
+		} finally {
+			client.close();
+		}
 	}
 
 	/**
@@ -189,7 +234,10 @@ public class Config {
 		return agentName;
 	}
 
-	private void report() {
+	/**
+	 * nice logging for objects
+	 */
+	public void report() {
 		logger.info("Loaded configuration: ");
 		try {
 			logger.info("[Data Sources      ] " + getDataSources().getSources().size() + " loaded");
@@ -202,6 +250,177 @@ public class Config {
 			logger.info("[Zookeeper address ] failed - " + e.getMessage());
 		}
 		logger.info("[Thread pool size  ] " + getThreadPoolSize());
+	}
+
+	/**
+	 * Add a new datasource
+	 * 
+	 * @param name
+	 *            source name
+	 * @param conn
+	 *            database connection string
+	 * @param driverClass
+	 *            jdbc driver class name
+	 * @param user
+	 *            username
+	 * @param pwd
+	 *            password
+	 * @throws Exception
+	 */
+	public void datasourceAdd(String name, String conn, String driverClass, String user, String pwd) throws Exception {
+
+		Sources sources = getDataSources();
+		if (sources != null) {
+			for (Source source : sources.getSources()) {
+				if (source.getName().equals(name))
+					throw new Exception("A datasource named '" + name + "' already exists");
+			}
+			if (name == null || name.isEmpty())
+				throw new Exception("A name must be provided");
+			if (conn == null || conn.isEmpty())
+				throw new Exception("A connection string must be provided");
+
+		} else {
+			sources = new Sources();
+		}
+
+		sources.getSources().add(new Source(name, conn, driverClass, user, pwd, new ArrayList<String>()));
+		setDataSources(sources);
+		logger.info("Datasource '" + name + "' registered");
+	}
+
+	/**
+	 * Remove an existing datasource
+	 * 
+	 * @param sourceName
+	 *            datasource name
+	 * @throws Exception
+	 */
+	public void datasourceDelete(String sourceName) throws Exception {
+
+		Sources sources = getDataSources();
+		if (sources != null) {
+			for (Source source : sources.getSources()) {
+				if (source.getName().equals(sourceName)) {
+					sources.getSources().remove(source);
+					setDataSources(sources);
+					logger.info("Datasource '" + sourceName + "' removed");
+					return;
+				}
+			}
+			throw new Exception("Datasource named '" + sourceName + "' not found!");
+
+		} else
+			throw new Exception("No datasources defined");
+	}
+
+	/**
+	 * Sets the datasource scan interval.
+	 * 
+	 * @param interval
+	 *            scan interval in milliseconds.
+	 * @throws Exception
+	 */
+	public void datasourceInterval(String interval) throws Exception {
+
+		Sources sources = getDataSources();
+		if (sources == null)
+			sources = new Sources();
+		long val = 5000L;
+		try {
+			val = Long.parseLong(interval);
+			if (val <= 0)
+				throw new NumberFormatException();
+
+		} catch (NumberFormatException nfe) {
+			throw new Exception("Invalid interval: must be an integer positive number");
+		}
+		sources.setInterval(val);
+		setDataSources(sources);
+		logger.info("Execution cycle interval set to " + val);
+	}
+
+	/**
+	 * Add a new handler to a datasource
+	 * 
+	 * @param sourceName
+	 *            datasource name
+	 * @param handlerClass
+	 *            handler class name
+	 * @throws Exception
+	 */
+	public void handlerAdd(String sourceName, String handlerClass) throws Exception {
+
+		Sources sources = getDataSources();
+		if (sources == null)
+			throw new Exception("No datasources found");
+
+		for (Source source : sources.getSources()) {
+			if (source.getName().equals(sourceName)) {
+				for (String handler : source.getHandlers()) {
+					if (handler.equals(handlerClass)) {
+						throw new Exception("The handler '" + handlerClass + "' already exists for datasource '"
+								+ sourceName + "'");
+					}
+				}
+				try {
+					Class.forName(handlerClass);
+					source.getHandlers().add(handlerClass);
+					setDataSources(sources);
+					logger.info("Handler '" + handlerClass + "' added to datasource '" + sourceName + "'");
+					return;
+
+				} catch (ClassNotFoundException cnfe) {
+					throw new Exception("Unable to add handler '" + handlerClass + "': class not found");
+				}
+			}
+		}
+		throw new Exception("Datasource '" + sourceName + "' not found");
+	}
+
+	/**
+	 * Removes a handler from a datasource
+	 * 
+	 * @param sourceName
+	 *            datasource name
+	 * @param handlerClass
+	 *            handler's class name
+	 * @throws Exception
+	 */
+	public void handlerDelete(String sourceName, String handlerClass) throws Exception {
+
+		Sources sources = getDataSources();
+		if (sources == null)
+			throw new Exception("No datasources found");
+
+		for (Source source : sources.getSources()) {
+			if (source.getName().equals(sourceName)) {
+				for (String handler : source.getHandlers()) {
+					if (handler.equals(handlerClass)) {
+						source.getHandlers().remove(handler);
+						setDataSources(sources);
+						logger.info("Handler '" + handlerClass + "' removed from datasource '" + sourceName + "'");
+						return;
+					}
+				}
+				throw new Exception("Datasource '" + sourceName + "' does not have this handler");
+			}
+		}
+		throw new Exception("Datasource '" + sourceName + "' not found");
+	}
+
+	/**
+	 * Print out configuration data.
+	 * 
+	 * @throws Exception
+	 */
+	public void listAll() throws Exception {
+		Sources sources = getDataSources();
+		if (sources == null)
+			throw new Exception("No datasources found!");
+
+		ObjectMapper mapper = new ObjectMapper();
+		logger.info(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(sources));
 	}
 
 	@Override

@@ -61,7 +61,7 @@ public class ConfigTest extends TestCase {
 		client.start();
 		ObjectMapper mapper = new ObjectMapper();
 		byte[] value = mapper.writeValueAsBytes(sources);
-		client.setData().forPath(App.BASEPREFIX + "config", value);
+		client.setData().forPath(App.BASEPREFIX + "/config", value);
 		client.close();
 
 		config = new Config(f.getAbsolutePath());
@@ -87,7 +87,7 @@ public class ConfigTest extends TestCase {
 	public void testGetSourceByHandler() throws Exception {
 		Source src = config.getDataSources().getSources().get(0);
 		for (JournalHandler handler : config.getHandlers()) {
-			assertEquals(src, config.getSourceByHandler(handler));
+			assertEquals(src.getConnection(), config.getSourceByHandler(handler).getConnection());
 		}
 	}
 

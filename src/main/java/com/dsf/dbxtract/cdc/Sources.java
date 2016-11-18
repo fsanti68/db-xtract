@@ -55,7 +55,7 @@ public class Sources {
 	public String toString() {
 
 		StringBuilder sb = new StringBuilder();
-		sb.append("Sources [interval=").append(interval).append(", sources=[");
+		sb.append("Sources {interval=").append(interval).append(", sources=[");
 		Iterator<Source> it = getSources().iterator();
 		while (it.hasNext()) {
 			Source src = it.next();

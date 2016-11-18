@@ -14,6 +14,7 @@ import javax.xml.bind.annotation.XmlType;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.CreateMode;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.dsf.dbxtract.cdc.App;
@@ -27,7 +28,7 @@ import com.dsf.dbxtract.cdc.App;
 public class Statistics {
 
 	private static final Logger logger = LogManager.getLogger(Statistics.class.getName());
-	protected static final String ZOOPATH = App.BASEPREFIX + "statistics";
+	protected static final String ZOOPATH = App.BASEPREFIX + "/statistics";
 
 	private ObjectMapper mapper;
 
@@ -54,7 +55,7 @@ public class Statistics {
 			entry.increment(rows);
 			byte[] b = mapper.writeValueAsBytes(entry);
 			if (client.checkExists().forPath(path) == null)
-				client.create().forPath(path);
+				client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
 			client.setData().forPath(path, b);
 
 		} catch (Exception e) {
@@ -73,8 +74,9 @@ public class Statistics {
 	public StatEntry get(CuratorFramework client, String handler) {
 		String path = ZOOPATH + "/" + handler;
 		try {
-			if (client.checkExists().forPath(ZOOPATH) == null)
-				client.create().forPath(ZOOPATH);
+			if (client.checkExists().forPath(path) == null)
+				client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
+
 			byte[] d = client.getData().forPath(path);
 			StatEntry entry = mapper.readValue(d, StatEntry.class);
 			if (entry == null)
@@ -106,7 +108,7 @@ public class Statistics {
 		private Date lastRead;
 		@XmlElement
 		private long readCount = 0L;
-		
+
 		public StatEntry() {
 		}
 

@@ -65,13 +65,13 @@ public class AppJournalWindowTest extends TestCase {
 		client.start();
 		ObjectMapper mapper = new ObjectMapper();
 		byte[] value = mapper.writeValueAsBytes(sources);
-		client.setData().forPath(App.BASEPREFIX + "config", value);
+		client.setData().forPath(App.BASEPREFIX + "/config", value);
 		
 		config = new Config(getClass().getClassLoader()
-				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-window.properties"));
+				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 		
 		PropertyConfigurator
-				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal-window.properties"));
+				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 
 		super.setUp();
 	}

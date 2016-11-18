@@ -35,6 +35,7 @@ import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 
 import com.dsf.dbxtract.cdc.App;
@@ -99,7 +100,7 @@ public class JournalExecutor implements Runnable {
 
 	private String getPrefix() {
 		if (prefix == null) {
-			prefix = new StringBuilder(App.BASEPREFIX).append(source.getName()).append('/')
+			prefix = new StringBuilder(App.BASEPREFIX).append('/').append(source.getName()).append('/')
 					.append(handler.getJournalTable()).toString();
 		}
 		return prefix;
@@ -274,7 +275,7 @@ public class JournalExecutor implements Runnable {
 		String s = lastWindowId.toString();
 		try {
 			if (client.checkExists().forPath(k) == null)
-				client.create().forPath(k);
+				client.create().withMode(CreateMode.PERSISTENT).forPath(k);
 
 			client.setData().forPath(k, s.getBytes());
 
