@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -84,23 +85,27 @@ public class Config {
 		handlerMap = new HashMap<JournalHandler, Source>();
 		Sources sources = getDataSources();
 		if (sources != null) {
+			List<String> affinity = getAffinity();
 			for (Source source : sources.getSources()) {
-				for (String handlerName : source.getHandlers()) {
-					JournalHandler handler;
-					try {
-						handler = (JournalHandler) Class.forName(handlerName).newInstance();
-						handlerMap.put(handler, source);
+				if (affinity.isEmpty() || affinity.contains(source.getName())) {
+					for (String handlerName : source.getHandlers()) {
+						JournalHandler handler;
+						try {
+							handler = (JournalHandler) Class.forName(handlerName).newInstance();
+							handlerMap.put(handler, source);
 
-					} catch (Exception e) {
-						logger.fatal("Unable to instantiate a handler: " + handlerName, e);
-						throw e;
+						} catch (Exception e) {
+							logger.fatal("Unable to instantiate a handler: " + handlerName, e);
+							throw e;
+						}
 					}
-				}
+
+				} else
+					logger.info("Source named '" + source.getName() + "' ignored: no match with affinity paramater");
 			}
 
-		} else {
+		} else
 			logger.warn("No datasources defined");
-		}
 	}
 
 	private CuratorFramework getClientForSources() throws Exception {
@@ -208,6 +213,27 @@ public class Config {
 			}
 		}
 		return pool;
+	}
+
+	/**
+	 * Get a list of datasources enabled for this node. An empty list means that
+	 * all datasources must be considered.
+	 * 
+	 * @return empty list or a list of datasources for this node
+	 */
+	public List<String> getAffinity() {
+
+		List<String> affinity = new ArrayList<String>();
+		String aff = props.getProperty("affinity");
+		if (aff != null && !aff.isEmpty()) {
+			String[] chunks = aff.split(",");
+			for (String s : chunks) {
+				String item = s.trim();
+				if (!item.isEmpty())
+					affinity.add(item);
+			}
+		}
+		return affinity;
 	}
 
 	/**

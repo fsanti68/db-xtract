@@ -56,7 +56,7 @@ public class AppJournalWindowTest extends TestCase {
 		Sources sources = new Sources();
 		sources.setInterval(1000L);
 		sources.getSources()
-				.add(new Source("test", "jdbc:mysql://localhost:3306/smartboard", "org.gjt.mm.mysql.Driver", "root",
+				.add(new Source("test", "jdbc:mysql://localhost:3306/dbxtest", "org.gjt.mm.mysql.Driver", "root",
 						"mysql", Arrays.asList("com.dsf.dbxtract.cdc.sample.TestWindowHandler",
 								"com.dsf.dbxtract.cdc.sample.TestWindowHandler")));
 
@@ -65,6 +65,8 @@ public class AppJournalWindowTest extends TestCase {
 		client.start();
 		ObjectMapper mapper = new ObjectMapper();
 		byte[] value = mapper.writeValueAsBytes(sources);
+		if (client.checkExists().forPath(App.BASEPREFIX + "/config") == null)
+			client.create().creatingParentsIfNeeded().forPath(App.BASEPREFIX + "/config");
 		client.setData().forPath(App.BASEPREFIX + "/config", value);
 		
 		config = new Config(getClass().getClassLoader()
@@ -96,16 +98,14 @@ public class AppJournalWindowTest extends TestCase {
 
 		// Carrega os dados de origem
 		PreparedStatement ps = conn
-				.prepareStatement("insert into test (key1,key2,attr1,attr2,attr3) values (?,?,?,?,?)");
+				.prepareStatement("insert into test (key1,key2,data) values (?,?,?)");
 		for (int i = 0; i < TEST_SIZE; i++) {
 			if ((i % 100) == 0) {
 				ps.executeBatch();
 			}
 			ps.setInt(1, 5000 + i);
 			ps.setInt(2, 6000 + i);
-			ps.setInt(3, i);
-			ps.setInt(4, (int) Math.random() * 500);
-			ps.setInt(5, (int) Math.random() * 500);
+			ps.setInt(3, (int) Math.random() * 500);
 			ps.addBatch();
 		}
 		ps.executeBatch();

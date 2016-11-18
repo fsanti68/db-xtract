@@ -41,7 +41,7 @@ public class AppJournalDeleteTest extends TestCase {
 
 		Sources sources = new Sources();
 		sources.setInterval(1000L);
-		sources.getSources().add(new Source("test", "jdbc:mysql://localhost:3306/smartboard", "org.gjt.mm.mysql.Driver",
+		sources.getSources().add(new Source("test", "jdbc:mysql://localhost:3306/dbxtest", "org.gjt.mm.mysql.Driver",
 				"root", "mysql",
 				Arrays.asList("com.dsf.dbxtract.cdc.sample.TestHandler", "com.dsf.dbxtract.cdc.sample.TestHandler")));
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
@@ -49,6 +49,8 @@ public class AppJournalDeleteTest extends TestCase {
 		client.start();
 		ObjectMapper mapper = new ObjectMapper();
 		byte[] value = mapper.writeValueAsBytes(sources);
+		if (client.checkExists().forPath(App.BASEPREFIX + "/config") == null)
+			client.create().creatingParentsIfNeeded().forPath(App.BASEPREFIX + "/config");
 		client.setData().forPath(App.BASEPREFIX + "/config", value);
 		client.close();
 
@@ -63,8 +65,8 @@ public class AppJournalDeleteTest extends TestCase {
 	 */
 	public void testApp() throws Exception {
 
-		final Config config = new Config(getClass().getClassLoader()
-				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
+		final Config config = new Config(
+				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().getSources().get(0);
