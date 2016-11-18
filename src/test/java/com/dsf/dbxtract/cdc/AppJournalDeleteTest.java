@@ -83,16 +83,14 @@ public class AppJournalDeleteTest extends TestCase {
 
 		// Carrega os dados de origem
 		PreparedStatement ps = conn
-				.prepareStatement("insert into test (key1,key2,attr1,attr2,attr3) values (?,?,?,?,?)");
+				.prepareStatement("insert into test (key1,key2,data) values (?,?,?)");
 		for (int i = 0; i < 1000; i++) {
 			if ((i % 100) == 0) {
 				ps.executeBatch();
 			}
 			ps.setInt(1, 5000 + i);
 			ps.setInt(2, 6000 + i);
-			ps.setInt(3, i);
-			ps.setInt(4, (int) Math.random() * 500);
-			ps.setInt(5, (int) Math.random() * 500);
+			ps.setInt(3, (int) Math.random() * 500);
 			ps.addBatch();
 		}
 		ps.executeBatch();
