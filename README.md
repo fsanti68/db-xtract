@@ -2,9 +2,9 @@
 
 Welcome to the DB-Xtract!
 
-It is an attempt to create a scalable, fault-tolerant and flexible change data capture (<i>CDC</i>) tool. At this very first moment, it is providing journal-based <i>CDC</i>, but I want to add other mechanisms for more performance and lower resources consumption.
+It is an attempt to create a scalable, fault-tolerant and flexible change data capture (_CDC_) tool. At this very first moment, it is providing journal-based _CDC_, but I want to add other mechanisms for more performance and lower resources consumption.
 
-DB-Xtract can be distributed as concurrent <i>CDC</i> agents, providing scalability, availability and fault-tolerance. It relies on Apache's ZooKeeper to coordinate concurrent data captures in a safe and still performatic way.
+DB-Xtract can be distributed as concurrent _CDC_ agents, providing scalability, availability and fault-tolerance. It relies on Apache's ZooKeeper to coordinate concurrent data captures in a safe and still performatic way.
 
 ## Getting Started
 
@@ -22,10 +22,14 @@ Download the project with:
 	git clone https://github.com/fsanti68/db-xtract
 	
 	mvn compile
-	
+
 **Note**: The <code>master</code> branch may be in an unstable or even broken state during development. Please use [releases](https://github.com/fsanti68/db-xtract/releases) instead of the <code>master</code> branch in order to get stable binaries.
 
 You can create in your database two tables, that will act as source table and journal table:
+
+	create database dbxtest;
+	
+	use dbxtest;
 
 	create table test (
 		key1	int not null,
@@ -53,7 +57,7 @@ Configure remaining parameters (that are shared among all DB-Xtract nodes):
 
 1) create a new datasource (essencially a database connection):
 
-	$ java -jar dbxtract.jar --config myconfig.properties --source-add test jdbc:mysql://localhost:3306/mytestdb org.gjt.mm.mysql.Driver root mysql
+	$ java -jar dbxtract.jar --config myconfig.properties --source-add test jdbc:mysql://localhost:3306/dbxtest org.gjt.mm.mysql.Driver root mysql
 	
 2) assign a new CDC handler for this datasource:
 
