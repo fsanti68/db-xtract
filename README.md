@@ -11,13 +11,13 @@ DB-Xtract can be distributed as concurrent _CDC_ agents, providing scalability, 
 For your first try, you need:
 <ul>
 <li>a JVM</li>
-<li>ZooKeeper (instructions at https://zookeeper.apache.org/)</li>
+<li>[Apache ZooKeeper](https://zookeeper.apache.org/)</li>
 <li>your preferred database (PostgreSQL, Oracle, MariaDB and so on). Out-of-the-box example is using MySQL, but you don't need to stick to this.</li>
 </ul>
 
 ### Installing
 
-Download the project with:
+Create your local copy of project:
 	
 	git clone https://github.com/fsanti68/db-xtract
 	
@@ -30,7 +30,7 @@ You can create in your database two tables, that will act as source table and jo
 	create database dbxtest;
 	
 	use dbxtest;
-
+	
 	create table test (
 		key1	int not null,
 		key2 int not null,
@@ -61,7 +61,7 @@ Configure remaining parameters (that are shared among all DB-Xtract nodes):
 	
 2) assign a new CDC handler for this datasource:
 
-	$ java -jar dbxtract.jar --config myconfig.properties --handler-add test  com.dsf.dbxtract.cdc.sample.TestHandler
+	$ java -jar dbxtract.jar --config myconfig.properties --handler-add test com.dsf.dbxtract.cdc.sample.TestHandler
 	
 3) check your new configuration:
 
