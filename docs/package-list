@@ -1,0 +1,5 @@
+com.dsf.dbxtract.cdc
+com.dsf.dbxtract.cdc.journal
+com.dsf.dbxtract.cdc.mon
+com.dsf.dbxtract.cdc.sample
+com.dsf.utils.sql
