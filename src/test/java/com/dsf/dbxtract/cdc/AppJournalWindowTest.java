@@ -81,7 +81,7 @@ public class AppJournalWindowTest {
 	 * Rigourous Test :-)
 	 */
 	@Test
-	public void testApp() throws Exception {
+	public void testAppWithJournalWindow() throws Exception {
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().getSources().get(0);
@@ -156,6 +156,7 @@ public class AppJournalWindowTest {
 
 			try {
 				Long lastWindowId = Long.parseLong(new String(client.getData().forPath(zkKey)));
+				System.out.println("lastWindowId = " + lastWindowId);
 				if (maxWindowId.longValue() == lastWindowId.longValue()) {
 					break;
 				}
@@ -165,12 +166,11 @@ public class AppJournalWindowTest {
 			}
 		}
 
-		testInfoStatistics();
-
 		conn.close();
 		ds.close();
 	}
 
+	@Test(dependsOnMethods = { "testAppWithJournalWindow" })
 	public void testInfoStatistics() throws Exception {
 
 		URL obj = new URL("http://localhost:9123/info");

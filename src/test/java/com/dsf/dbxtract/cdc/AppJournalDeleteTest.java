@@ -62,7 +62,7 @@ public class AppJournalDeleteTest {
 	 * Rigourous Test :-)
 	 */
 	@Test
-	public void testApp() throws Exception {
+	public void testAppWithJournalDelete() throws Exception {
 
 		final Config config = new Config(
 				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
