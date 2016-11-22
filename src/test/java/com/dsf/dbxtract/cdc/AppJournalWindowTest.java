@@ -68,10 +68,10 @@ public class AppJournalWindowTest extends TestCase {
 		if (client.checkExists().forPath(App.BASEPREFIX + "/config") == null)
 			client.create().creatingParentsIfNeeded().forPath(App.BASEPREFIX + "/config");
 		client.setData().forPath(App.BASEPREFIX + "/config", value);
-		
-		config = new Config(getClass().getClassLoader()
-				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
-		
+
+		config = new Config(
+				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
+
 		PropertyConfigurator
 				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 
@@ -81,7 +81,7 @@ public class AppJournalWindowTest extends TestCase {
 	/**
 	 * Rigourous Test :-)
 	 */
-	public void testApp() throws Exception {
+	public void testStep01App() throws Exception {
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().getSources().get(0);
@@ -97,8 +97,7 @@ public class AppJournalWindowTest extends TestCase {
 		conn.createStatement().execute("truncate table j$test");
 
 		// Carrega os dados de origem
-		PreparedStatement ps = conn
-				.prepareStatement("insert into test (key1,key2,data) values (?,?,?)");
+		PreparedStatement ps = conn.prepareStatement("insert into test (key1,key2,data) values (?,?,?)");
 		for (int i = 0; i < TEST_SIZE; i++) {
 			if ((i % 100) == 0) {
 				ps.executeBatch();
@@ -168,7 +167,7 @@ public class AppJournalWindowTest extends TestCase {
 		ds.close();
 	}
 
-	public void testInfoStatistics() throws IOException {
+	public void testStep02InfoStatistics() throws IOException {
 
 		URL obj = new URL("http://localhost:9123/info");
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
