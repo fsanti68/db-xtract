@@ -37,7 +37,7 @@ public class ConfigTest {
 	private static final String zookeeper = "localhost:2181";
 	private static final long interval = 1000L;
 	private static final String driver = "org.gjt.mm.mysql.Driver";
-	private static final String connection = "jdbc:mysql://localhost:3306/smartboard";
+	private static final String connection = "jdbc:mysql://localhost:3306/dbxtest";
 	private static final String handler = "com.dsf.dbxtract.cdc.sample.TestHandler";
 
 	private Config config;
