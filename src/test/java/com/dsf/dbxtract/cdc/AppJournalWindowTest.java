@@ -17,7 +17,6 @@
 package com.dsf.dbxtract.cdc;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -46,6 +45,7 @@ import junit.framework.TestCase;
 public class AppJournalWindowTest extends TestCase {
 
 	private int TEST_SIZE = 1000;
+	private static boolean loadFinished = false;
 
 	private Config config;
 	private CuratorFramework client;
@@ -156,8 +156,10 @@ public class AppJournalWindowTest extends TestCase {
 
 			try {
 				Long lastWindowId = Long.parseLong(new String(client.getData().forPath(zkKey)));
-				if (maxWindowId.longValue() == lastWindowId.longValue())
+				if (maxWindowId.longValue() == lastWindowId.longValue()) {
+					loadFinished = true;
 					break;
+				}
 
 			} catch (NoNodeException nne) {
 				System.out.println("ZooKeeper - no node exception :: " + zkKey);
@@ -167,7 +169,12 @@ public class AppJournalWindowTest extends TestCase {
 		ds.close();
 	}
 
-	public void testStep02InfoStatistics() throws IOException {
+	public void testStep02InfoStatistics() throws Exception {
+
+		while (!loadFinished) {
+			System.out.println("Waiting for step01 finish");
+			Thread.sleep(1000);
+		}
 
 		URL obj = new URL("http://localhost:9123/info");
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
