@@ -34,24 +34,25 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.testng.Assert;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
 import com.dsf.dbxtract.cdc.mon.Monitor;
-
-import junit.framework.TestCase;
 
 /**
  * Unit test for simple App.
  */
-public class AppJournalWindowTest extends TestCase {
+public class AppJournalWindowTest {
 
 	private int TEST_SIZE = 1000;
-	private static boolean loadFinished = false;
 
 	private Config config;
 	private CuratorFramework client;
 
-	@Override
-	protected void setUp() throws Exception {
+	@BeforeTest
+	public void setUp() throws Exception {
 
 		Sources sources = new Sources();
 		sources.setInterval(1000L);
@@ -74,14 +75,13 @@ public class AppJournalWindowTest extends TestCase {
 
 		PropertyConfigurator
 				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
-
-		super.setUp();
 	}
 
 	/**
 	 * Rigourous Test :-)
 	 */
-	public void testStep01App() throws Exception {
+	@Test
+	public void testApp() throws Exception {
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().getSources().get(0);
@@ -157,7 +157,6 @@ public class AppJournalWindowTest extends TestCase {
 			try {
 				Long lastWindowId = Long.parseLong(new String(client.getData().forPath(zkKey)));
 				if (maxWindowId.longValue() == lastWindowId.longValue()) {
-					loadFinished = true;
 					break;
 				}
 
@@ -165,16 +164,14 @@ public class AppJournalWindowTest extends TestCase {
 				System.out.println("ZooKeeper - no node exception :: " + zkKey);
 			}
 		}
+
+		testInfoStatistics();
+
 		conn.close();
 		ds.close();
 	}
 
-	public void testStep02InfoStatistics() throws Exception {
-
-		while (!loadFinished) {
-			System.out.println("Waiting for step01 finish");
-			Thread.sleep(1000);
-		}
+	public void testInfoStatistics() throws Exception {
 
 		URL obj = new URL("http://localhost:9123/info");
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -186,7 +183,7 @@ public class AppJournalWindowTest extends TestCase {
 		con.setRequestProperty("User-Agent", "Mozilla/5.0");
 
 		int responseCode = con.getResponseCode();
-		assertEquals(responseCode, 200);
+		Assert.assertEquals(responseCode, 200);
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		String inputLine;
@@ -198,14 +195,13 @@ public class AppJournalWindowTest extends TestCase {
 		String s = response.toString();
 		System.out.println(s);
 
-		assertTrue("unexpected response: " + s, s.startsWith("{\"handlers\":[{\"name\":"));
-		assertTrue("unexpected response: " + s, s.contains("\"readCount\":" + TEST_SIZE + "}"));
+		Assert.assertTrue(s.startsWith("{\"handlers\":[{\"name\":"), "unexpected response: " + s);
+		Assert.assertTrue(s.contains("\"readCount\":" + TEST_SIZE + "}"), "unexpected response: " + s);
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@AfterTest
+	public void tearDown() throws Exception {
 
 		client.close();
-		super.tearDown();
 	}
 }

@@ -26,12 +26,13 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.testng.Assert;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
 
-import junit.framework.TestCase;
-
-public class ConfigTest extends TestCase {
+public class ConfigTest {
 
 	private static final String zookeeper = "localhost:2181";
 	private static final long interval = 1000L;
@@ -41,8 +42,8 @@ public class ConfigTest extends TestCase {
 
 	private Config config;
 
-	@Override
-	protected void setUp() throws Exception {
+	@BeforeTest
+	public void setUp() throws Exception {
 		File f = File.createTempFile("config", "props");
 		FileWriter fw = new FileWriter(f);
 		fw.append("log4j.rootLogger=DEBUG,A1\nlog4j.appender.A1=org.apache.log4j.ConsoleAppender"
@@ -65,41 +66,47 @@ public class ConfigTest extends TestCase {
 		client.close();
 
 		config = new Config(f.getAbsolutePath());
-		super.setUp();
 	}
 
+	@Test
 	public void testConfig() {
-		assertNotNull(config);
+		Assert.assertNotNull(config);
 	}
 
+	@Test
 	public void testGetDataSources() throws Exception {
-		assertTrue(config.getDataSources().getSources().size() == 1);
+		Assert.assertTrue(config.getDataSources().getSources().size() == 1);
 		Source src = config.getDataSources().getSources().get(0);
-		assertEquals(connection, src.getConnection());
-		assertEquals(driver, src.getDriver());
+		Assert.assertEquals(connection, src.getConnection());
+		Assert.assertEquals(driver, src.getDriver());
 	}
 
+	@Test
 	public void testGetHandlers() throws Exception {
 		Source src = config.getDataSources().getSources().get(0);
-		assertEquals(handler, src.getHandlers().get(0));
+		Assert.assertEquals(handler, src.getHandlers().get(0));
 	}
 
+	@Test
 	public void testGetSourceByHandler() throws Exception {
 		Source src = config.getDataSources().getSources().get(0);
 		for (JournalHandler handler : config.getHandlers()) {
-			assertEquals(src.getConnection(), config.getSourceByHandler(handler).getConnection());
+			Assert.assertEquals(src.getConnection(), config.getSourceByHandler(handler).getConnection());
 		}
 	}
 
+	@Test
 	public void testGetZooKeeper() throws Exception {
-		assertEquals(zookeeper, config.getZooKeeper());
+		Assert.assertEquals(zookeeper, config.getZooKeeper());
 	}
 
+	@Test
 	public void testGetInterval() throws Exception {
-		assertEquals(interval, config.getDataSources().getInterval());
+		Assert.assertEquals(interval, config.getDataSources().getInterval());
 	}
 
+	@Test
 	public void testGetAgentName() {
-		assertNotNull(config.getAgentName());
+		Assert.assertNotNull(config.getAgentName());
 	}
 }

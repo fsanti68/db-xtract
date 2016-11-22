@@ -28,16 +28,16 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.PropertyConfigurator;
 import org.codehaus.jackson.map.ObjectMapper;
-
-import junit.framework.TestCase;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
 /**
  * Unit test for simple App.
  */
-public class AppJournalDeleteTest extends TestCase {
+public class AppJournalDeleteTest {
 
-	@Override
-	protected void setUp() throws Exception {
+	@BeforeTest
+	public void setUp() throws Exception {
 
 		Sources sources = new Sources();
 		sources.setInterval(1000L);
@@ -56,13 +56,12 @@ public class AppJournalDeleteTest extends TestCase {
 
 		PropertyConfigurator
 				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
-
-		super.setUp();
 	}
 
 	/**
 	 * Rigourous Test :-)
 	 */
+	@Test
 	public void testApp() throws Exception {
 
 		final Config config = new Config(
@@ -82,8 +81,7 @@ public class AppJournalDeleteTest extends TestCase {
 		conn.createStatement().execute("truncate table j$test");
 
 		// Carrega os dados de origem
-		PreparedStatement ps = conn
-				.prepareStatement("insert into test (key1,key2,data) values (?,?,?)");
+		PreparedStatement ps = conn.prepareStatement("insert into test (key1,key2,data) values (?,?,?)");
 		for (int i = 0; i < 1000; i++) {
 			if ((i % 100) == 0) {
 				ps.executeBatch();

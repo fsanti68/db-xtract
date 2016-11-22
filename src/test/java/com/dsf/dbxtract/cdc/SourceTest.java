@@ -18,45 +18,52 @@ package com.dsf.dbxtract.cdc;
 
 import java.util.Arrays;
 
-import junit.framework.TestCase;
+import org.testng.Assert;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
-public class SourceTest extends TestCase {
+public class SourceTest {
 
 	private static Source src;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-
+	@BeforeTest
+	public void setUp() throws Exception {
 		src = new Source("a", "c", "d", "u", "p", Arrays.asList("h1", "h2", "h3", "h4", "com.t.h5"));
 	}
 
+	@Test
 	public void testSource() {
-		assertNotNull(src);
+		Assert.assertNotNull(src);
 	}
 
+	@Test
 	public void testGetName() {
-		assertEquals("a", src.getName());
+		Assert.assertEquals("a", src.getName());
 	}
 
+	@Test
 	public void testGetConnection() {
-		assertEquals("c", src.getConnection());
+		Assert.assertEquals("c", src.getConnection());
 	}
 
+	@Test
 	public void testGetDriver() {
-		assertEquals("d", src.getDriver());
+		Assert.assertEquals("d", src.getDriver());
 	}
 
+	@Test
 	public void testGetUser() {
-		assertEquals("u", src.getUser());
+		Assert.assertEquals("u", src.getUser());
 	}
 
+	@Test
 	public void testGetPassword() {
-		assertEquals("p", src.getPassword());
+		Assert.assertEquals("p", src.getPassword());
 	}
 
+	@Test
 	public void testGetHandlers() {
-		assertEquals(src.getHandlers().size(), 5);
-		assertEquals(src.getHandlers().get(1), "h2");
+		Assert.assertEquals(src.getHandlers().size(), 5);
+		Assert.assertEquals(src.getHandlers().get(1), "h2");
 	}
 }
