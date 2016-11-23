@@ -194,8 +194,7 @@ public class App {
 					// obtain configuration
 					config = new Config(configFilename);
 				} else {
-					if (config == null)
-						throw new Exception("Parameter required: --config");
+					throw new Exception("Parameter required: --config");
 				}
 				if (cmd.hasOption("monitor")) {
 					monitorPort = Integer.parseInt(cmd.getOptionValue("monitor"));
