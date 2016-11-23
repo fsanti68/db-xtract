@@ -54,11 +54,18 @@ public class AppJournalWindowTest {
 	@BeforeTest
 	public void setUp() throws Exception {
 
+
+		config = new Config(
+				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
+
+		PropertyConfigurator
+				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
+
 		Sources sources = new Sources();
 		sources.setInterval(1000L);
 		sources.getSources()
-				.add(new Source("test", "jdbc:mysql://localhost:3306/dbxtest", "org.gjt.mm.mysql.Driver", "root",
-						"mysql", Arrays.asList("com.dsf.dbxtract.cdc.sample.TestWindowHandler",
+				.add(new Source("test", "jdbc:mysql://localhost:3306/dbxtest?useSSL=false", "org.gjt.mm.mysql.Driver",
+						"root", "mysql", Arrays.asList("com.dsf.dbxtract.cdc.sample.TestWindowHandler",
 								"com.dsf.dbxtract.cdc.sample.TestWindowHandler")));
 
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
@@ -69,12 +76,6 @@ public class AppJournalWindowTest {
 		if (client.checkExists().forPath(App.BASEPREFIX + "/config") == null)
 			client.create().creatingParentsIfNeeded().forPath(App.BASEPREFIX + "/config");
 		client.setData().forPath(App.BASEPREFIX + "/config", value);
-
-		config = new Config(
-				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
-
-		PropertyConfigurator
-				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 	}
 
 	/**

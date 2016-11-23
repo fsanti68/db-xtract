@@ -21,12 +21,15 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import javax.naming.ConfigurationException;
 
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -134,7 +137,7 @@ public class Config {
 		String path = App.BASEPREFIX + "/config";
 		CuratorFramework client = getClientForSources();
 		if (client.checkExists().forPath(path) == null)
-			throw new Exception("No configuration found (zk): " + path);
+			throw new ConfigurationException("No configuration found (zk): " + path);
 		byte[] json = client.getData().forPath(path);
 		client.close();
 		if (json == null || json.length == 0)
@@ -145,7 +148,7 @@ public class Config {
 			return mapper.readValue(json, Sources.class);
 
 		} catch (JsonMappingException jme) {
-			logger.error("Invalid config data: " + new String(json));
+			logger.error("Invalid config data: " + new String(json), jme);
 
 			return null;
 		}
@@ -191,10 +194,10 @@ public class Config {
 	 * 
 	 * @return ZooKeeper connection string (i.e. "localhost:2181")
 	 */
-	public String getZooKeeper() throws Exception {
+	public String getZooKeeper() throws ConfigurationException {
 		String s = props.getProperty("zookeeper");
 		if (s == null || s.isEmpty())
-			throw new Exception("zookeeper is a required configuration parameter!");
+			throw new ConfigurationException("zookeeper is a required configuration parameter!");
 		return s;
 	}
 
@@ -254,6 +257,7 @@ public class Config {
 
 				} catch (UnknownHostException e) {
 					agentName = "Agent-" + (System.currentTimeMillis() % 10000);
+					logger.warn(e);
 				}
 			}
 		}
@@ -268,12 +272,12 @@ public class Config {
 		try {
 			logger.info("[Data Sources      ] " + getDataSources().getSources().size() + " loaded");
 		} catch (Exception e) {
-			logger.info("[Data Sources      ] failed - " + e.getMessage());
+			logger.warn("[Data Sources      ]", e);
 		}
 		try {
 			logger.info("[Zookeeper address ] " + getZooKeeper());
 		} catch (Exception e) {
-			logger.info("[Zookeeper address ] failed - " + e.getMessage());
+			logger.warn("[Zookeeper address ]", e);
 		}
 		logger.info("[Thread pool size  ] " + getThreadPoolSize());
 	}
@@ -299,12 +303,12 @@ public class Config {
 		if (sources != null) {
 			for (Source source : sources.getSources()) {
 				if (source.getName().equals(name))
-					throw new Exception("A datasource named '" + name + "' already exists");
+					throw new ConfigurationException("A datasource named '" + name + "' already exists");
 			}
 			if (name == null || name.isEmpty())
-				throw new Exception("A name must be provided");
+				throw new InvalidParameterException("A name must be provided");
 			if (conn == null || conn.isEmpty())
-				throw new Exception("A connection string must be provided");
+				throw new InvalidParameterException("A connection string must be provided");
 
 		} else {
 			sources = new Sources();
@@ -334,10 +338,10 @@ public class Config {
 					return;
 				}
 			}
-			throw new Exception("Datasource named '" + sourceName + "' not found!");
+			throw new InvalidParameterException("Datasource named '" + sourceName + "' not found!");
 
 		} else
-			throw new Exception("No datasources defined");
+			throw new InvalidParameterException("No datasources defined");
 	}
 
 	/**
@@ -359,7 +363,7 @@ public class Config {
 				throw new NumberFormatException();
 
 		} catch (NumberFormatException nfe) {
-			throw new Exception("Invalid interval: must be an integer positive number");
+			throw new NumberFormatException("Invalid interval: must be an integer positive number");
 		}
 		sources.setInterval(val);
 		setDataSources(sources);
@@ -397,7 +401,7 @@ public class Config {
 					return;
 
 				} catch (ClassNotFoundException cnfe) {
-					throw new Exception("Unable to add handler '" + handlerClass + "': class not found");
+					throw new Exception("Unable to add handler '" + handlerClass + "': class not found", cnfe);
 				}
 			}
 		}
@@ -456,11 +460,13 @@ public class Config {
 		try {
 			sb.append(getDataSources().toString());
 		} catch (Exception e) {
+			logger.warn("datasource retrieval", e);
 		}
 		sb.append(", zookeeper=");
 		try {
 			sb.append(getZooKeeper());
 		} catch (Exception e) {
+			logger.warn("zookeeper address retrieval", e);
 		}
 		sb.append(", threadPoolSize=" + getThreadPoolSize()).append(']');
 		return sb.toString();

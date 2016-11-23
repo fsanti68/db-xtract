@@ -59,10 +59,9 @@ public class NamedParameterStatement {
 	 */
 	static final String parse(String query, Map paramMap) {
 		// I was originally using regular expressions, but they didn't work well
-		// for ignoring
-		// parameter-like strings inside quotes.
+		// for ignoring parameter-like strings inside quotes.
 		int length = query.length();
-		StringBuffer parsedQuery = new StringBuffer(length);
+		StringBuilder parsedQuery = new StringBuilder(length);
 		boolean inSingleQuote = false;
 		boolean inDoubleQuote = false;
 		int index = 1;

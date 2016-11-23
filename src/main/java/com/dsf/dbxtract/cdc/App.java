@@ -15,6 +15,7 @@
  */
 package com.dsf.dbxtract.cdc;
 
+import java.security.InvalidParameterException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -192,6 +193,9 @@ public class App {
 					PropertyConfigurator.configure(configFilename);
 					// obtain configuration
 					config = new Config(configFilename);
+				} else {
+					if (config == null)
+						throw new Exception("Parameter required: --config");
 				}
 				if (cmd.hasOption("monitor")) {
 					monitorPort = Integer.parseInt(cmd.getOptionValue("monitor"));
@@ -199,7 +203,7 @@ public class App {
 				if (cmd.hasOption("source-add")) {
 					String[] params = cmd.getOptionValues("source-add");
 					if (params == null || params.length < 5)
-						throw new Exception(
+						throw new InvalidParameterException(
 								"Parameters required: <source name> <connection string> <driver class> <username> <password>");
 					config.datasourceAdd(params[0], params[1], params[2], params[3], params[4]);
 
@@ -214,13 +218,13 @@ public class App {
 				} else if (cmd.hasOption("handler-add")) {
 					String[] params = cmd.getOptionValues("handler-add");
 					if (params == null || params.length < 2)
-						throw new Exception("Parameters required: <sourceName> <handlerClass>");
+						throw new InvalidParameterException("Parameters required: <sourceName> <handlerClass>");
 					config.handlerAdd(params[0], params[1]);
 
 				} else if (cmd.hasOption("handler-delete")) {
 					String[] params = cmd.getOptionValues("handler-delete");
 					if (params == null || params.length < 2)
-						throw new Exception("Parameters required: <sourceName> <handlerClass>");
+						throw new InvalidParameterException("Parameters required: <sourceName> <handlerClass>");
 					config.handlerDelete(params[0], params[1]);
 
 				} else if (cmd.hasOption("list")) {

@@ -109,10 +109,14 @@ public class JournalExecutor implements Runnable {
 	private Long getLastWindowId(CuratorFramework client) throws Exception {
 
 		try {
-			String s = new String(client.getData().forPath(getPrefix() + "/lastWindowId"));
-			return s == null ? 0L : Long.parseLong(s);
+			byte[] b = client.getData().forPath(getPrefix() + "/lastWindowId");
+			if (b == null)
+				return 0L;
+
+			return Long.parseLong(new String(b));
 
 		} catch (NoNodeException nne) {
+			logger.warn(nne);
 			return 0L;
 		}
 	}

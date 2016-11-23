@@ -39,10 +39,14 @@ public class AppJournalDeleteTest {
 	@BeforeTest
 	public void setUp() throws Exception {
 
+
+		PropertyConfigurator
+				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
+
 		Sources sources = new Sources();
 		sources.setInterval(1000L);
-		sources.getSources().add(new Source("test", "jdbc:mysql://localhost:3306/dbxtest", "org.gjt.mm.mysql.Driver",
-				"root", "mysql",
+		sources.getSources().add(new Source("test", "jdbc:mysql://localhost:3306/dbxtest?useSSL=false",
+				"org.gjt.mm.mysql.Driver", "root", "mysql",
 				Arrays.asList("com.dsf.dbxtract.cdc.sample.TestHandler", "com.dsf.dbxtract.cdc.sample.TestHandler")));
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 		CuratorFramework client = CuratorFrameworkFactory.newClient("localhost:2181", retryPolicy);
@@ -53,9 +57,6 @@ public class AppJournalDeleteTest {
 			client.create().creatingParentsIfNeeded().forPath(App.BASEPREFIX + "/config");
 		client.setData().forPath(App.BASEPREFIX + "/config", value);
 		client.close();
-
-		PropertyConfigurator
-				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 	}
 
 	/**

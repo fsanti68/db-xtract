@@ -21,7 +21,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 public class DBUtils {
+
+	private static final Logger logger = LogManager.getLogger(DBUtils.class.getName());
 
 	private DBUtils() {
 	}
@@ -32,6 +37,7 @@ public class DBUtils {
 				rs.close();
 
 			} catch (SQLException sqle) {
+				logger.warn("closing resultset", sqle);
 			}
 	}
 
@@ -41,6 +47,7 @@ public class DBUtils {
 				stmt.close();
 
 			} catch (SQLException sqle) {
+				logger.warn("closing statement", sqle);
 			}
 	}
 
@@ -50,6 +57,7 @@ public class DBUtils {
 				stmt.close();
 
 			} catch (SQLException sqle) {
+				logger.warn("closing namedparameterstatement", sqle);
 			}
 	}
 
@@ -59,6 +67,7 @@ public class DBUtils {
 				c.close();
 
 			} catch (SQLException sqle) {
+				logger.warn("closing connection", sqle);
 			}
 	}
 }
