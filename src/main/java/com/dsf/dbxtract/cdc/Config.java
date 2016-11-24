@@ -78,11 +78,12 @@ public class Config {
 			throw new ConfigurationException("configuration file not found: " + path, e);
 
 		} finally {
-			try {
-				stream.close();
-			} catch (IOException e) {
-				logger.warn("failed to close file " + path, e);
-			}
+			if (stream != null)
+				try {
+					stream.close();
+				} catch (IOException e) {
+					logger.warn("failed to close file " + path, e);
+				}
 		}
 	}
 
