@@ -69,14 +69,21 @@ public class Config {
 	 */
 	public Config(String path) throws ConfigurationException {
 
-		InputStream stream;
+		InputStream stream = null;
 		try {
 			stream = new FileInputStream(new File(path));
+			init(stream);
 
 		} catch (FileNotFoundException e) {
 			throw new ConfigurationException("configuration file not found: " + path, e);
+
+		} finally {
+			try {
+				stream.close();
+			} catch (IOException e) {
+				logger.warn("failed to close file " + path, e);
+			}
 		}
-		init(stream);
 	}
 
 	/**
@@ -484,8 +491,7 @@ public class Config {
 	 * @throws JsonParseException
 	 * @throws Exception
 	 */
-	public void handlerDelete(String sourceName, String handlerClass)
-			throws ConfigurationException {
+	public void handlerDelete(String sourceName, String handlerClass) throws ConfigurationException {
 
 		Sources sources = getDataSources();
 		if (sources == null)
