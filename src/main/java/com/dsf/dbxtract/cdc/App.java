@@ -52,12 +52,12 @@ public class App {
 	private ScheduledExecutorService scheduledService = null;
 
 	/**
-	 * Sets configuration data to application
+	 * Constructor
 	 * 
 	 * @param config
-	 *            configuration data
+	 *            agent's configuration
 	 */
-	public void setConfig(Config config) {
+	public App(Config config) {
 		this.config = config;
 	}
 
@@ -178,7 +178,7 @@ public class App {
 	 */
 	public static void main(String[] args) {
 
-		int monitorPort = 9000;
+		int monitorPort = 9001;
 		String configFilename = null;
 		Config config = null;
 		try {
@@ -230,17 +230,17 @@ public class App {
 					config.listAll();
 
 				} else if (cmd.hasOption("start")) {
-					// Start CDC service
 					System.out.println("Welcome to db-xtract");
 
-					// an get db-xtract configuration
+					// get db-xtract configuration
 					config.report();
-					App app = new App();
-					app.setConfig(config);
-					app.start();
 
 					// Starts monitor server
-					new Monitor(monitorPort, app.getConfig());
+					new Monitor(monitorPort, config);
+
+					// Starts service
+					App app = new App(config);
+					app.start();
 
 				} else {
 					throw new ParseException(

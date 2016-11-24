@@ -27,6 +27,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.zookeeper.CreateMode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -38,7 +39,6 @@ public class AppJournalDeleteTest {
 
 	@BeforeTest
 	public void setUp() throws Exception {
-
 
 		PropertyConfigurator
 				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
@@ -54,7 +54,8 @@ public class AppJournalDeleteTest {
 		ObjectMapper mapper = new ObjectMapper();
 		byte[] value = mapper.writeValueAsBytes(sources);
 		if (client.checkExists().forPath(App.BASEPREFIX + "/config") == null)
-			client.create().creatingParentsIfNeeded().forPath(App.BASEPREFIX + "/config");
+			client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
+					.forPath(App.BASEPREFIX + "/config");
 		client.setData().forPath(App.BASEPREFIX + "/config", value);
 		client.close();
 	}
@@ -95,8 +96,7 @@ public class AppJournalDeleteTest {
 		ps.executeBatch();
 		ps.close();
 
-		App app = new App();
-		app.setConfig(config);
+		App app = new App(config);
 		app.start();
 
 		// Popula as tabelas de journal

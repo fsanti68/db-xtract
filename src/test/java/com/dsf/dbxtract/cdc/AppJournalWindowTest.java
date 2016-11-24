@@ -32,6 +32,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.testng.Assert;
@@ -39,6 +40,7 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
+import com.dsf.dbxtract.cdc.journal.JournalStrategy;
 import com.dsf.dbxtract.cdc.mon.Monitor;
 
 /**
@@ -54,13 +56,6 @@ public class AppJournalWindowTest {
 	@BeforeTest
 	public void setUp() throws Exception {
 
-
-		config = new Config(
-				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
-
-		PropertyConfigurator
-				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
-
 		Sources sources = new Sources();
 		sources.setInterval(1000L);
 		sources.getSources()
@@ -68,14 +63,31 @@ public class AppJournalWindowTest {
 						"root", "mysql", Arrays.asList("com.dsf.dbxtract.cdc.sample.TestWindowHandler",
 								"com.dsf.dbxtract.cdc.sample.TestWindowHandler")));
 
+		// Add configuration to zk
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 		client = CuratorFrameworkFactory.newClient("localhost:2181", retryPolicy);
 		client.start();
+
 		ObjectMapper mapper = new ObjectMapper();
 		byte[] value = mapper.writeValueAsBytes(sources);
 		if (client.checkExists().forPath(App.BASEPREFIX + "/config") == null)
-			client.create().creatingParentsIfNeeded().forPath(App.BASEPREFIX + "/config");
+			client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
+					.forPath(App.BASEPREFIX + "/config");
 		client.setData().forPath(App.BASEPREFIX + "/config", value);
+
+		// Clean previous statistics and states
+		if (client.checkExists().forPath("/dbxtract/cdc/statistics") != null) {
+			List<String> children = client.getChildren().forPath("/dbxtract/cdc/statistics");
+			for (String k : children)
+				client.delete().forPath("/dbxtract/cdc/statistics/" + k);
+			client.delete().forPath("/dbxtract/cdc/statistics");
+		}
+
+		config = new Config(
+				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
+
+		PropertyConfigurator
+				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 	}
 
 	/**
@@ -132,25 +144,20 @@ public class AppJournalWindowTest {
 		}
 		rs.close();
 
-		// Clean previous statistics and states
-		if (client.checkExists().forPath("/dbxtract/cdc/statistics") != null) {
-			List<String> children = client.getChildren().forPath("/dbxtract/cdc/statistics");
-			for (String k : children)
-				client.delete().forPath("/dbxtract/cdc/statistics/" + k);
-			client.delete().forPath("/dbxtract/cdc/statistics");
-		}
+		// Clear any previous test
 		String zkKey = "/dbxtract/cdc/" + source.getName() + "/J$TEST/lastWindowId";
 		if (client.checkExists().forPath(zkKey) != null)
 			client.delete().forPath(zkKey);
 
+		// starts monitor
+		new Monitor(9123, config);
+
 		// start app
-		App app = new App();
-		app.setConfig(config);
+		App app = new App(config);
 		System.out.println(config.toString());
 		app.start();
 
-		// starts monitor
-		new Monitor(9123, config);
+		Assert.assertEquals(config.getHandlers().iterator().next().getStrategy(), JournalStrategy.WINDOW);
 
 		while (true) {
 			Thread.sleep(1000);
