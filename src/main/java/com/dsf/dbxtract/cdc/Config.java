@@ -290,12 +290,12 @@ public class Config {
 	 */
 	public int getThreadPoolSize() {
 		int pool = 5;
-		String _pool = props.getProperty("thread.pool.size");
-		if (_pool != null && !_pool.isEmpty()) {
+		String p = props.getProperty("thread.pool.size");
+		if (p != null && !p.isEmpty()) {
 			try {
-				pool = Integer.parseInt(_pool);
+				pool = Integer.parseInt(p);
 			} catch (NumberFormatException nfe) {
-				logger.warn("Invalid config 'thread.pool.size' = " + _pool + " -> assuming " + pool);
+				logger.warn("Invalid config 'thread.pool.size' = " + p + " -> assuming " + pool);
 			}
 		}
 		return pool;
@@ -397,9 +397,8 @@ public class Config {
 			if (conn == null || conn.isEmpty())
 				throw new ConfigurationException("A connection string must be provided");
 
-		} else {
+		} else
 			sources = new Sources();
-		}
 
 		sources.getSources().add(new Source(name, conn, driverClass, user, pwd, new ArrayList<String>()));
 		setDataSources(sources);
@@ -481,26 +480,31 @@ public class Config {
 
 		for (Source source : sources.getSources()) {
 			if (source.getName().equals(sourceName)) {
-				for (String handler : source.getHandlers()) {
-					if (handler.equals(handlerClass)) {
-						throw new ConfigurationException("The handler '" + handlerClass
-								+ "' already exists for datasource '" + sourceName + "'");
-					}
-				}
-				try {
-					Class.forName(handlerClass);
-					source.getHandlers().add(handlerClass);
-					setDataSources(sources);
-					logger.info("Handler '" + handlerClass + "' added to datasource '" + sourceName + "'");
-					return;
-
-				} catch (ClassNotFoundException cnfe) {
-					throw new ConfigurationException("Unable to add handler '" + handlerClass + "': class not found",
-							cnfe);
-				}
+				addHandlerToDatasource(source, handlerClass);
+				setDataSources(sources);
+				logger.info("Handler '" + handlerClass + "' added to datasource '" + sourceName + "'");
+				return;
 			}
 		}
 		throw new ConfigurationException("Datasource '" + sourceName + "' not found");
+	}
+
+	private void addHandlerToDatasource(Source source, String handlerClass) throws ConfigurationException {
+
+		for (String handler : source.getHandlers()) {
+			if (handler.equals(handlerClass)) {
+				throw new ConfigurationException(
+						"The handler '" + handlerClass + "' already exists for datasource '" + source.getName() + "'");
+			}
+		}
+		try {
+			Class.forName(handlerClass);
+			source.getHandlers().add(handlerClass);
+			return;
+
+		} catch (ClassNotFoundException cnfe) {
+			throw new ConfigurationException("Unable to add handler '" + handlerClass + "': class not found", cnfe);
+		}
 	}
 
 	/**
@@ -523,18 +527,24 @@ public class Config {
 
 		for (Source source : sources.getSources()) {
 			if (source.getName().equals(sourceName)) {
-				for (String handler : source.getHandlers()) {
-					if (handler.equals(handlerClass)) {
-						source.getHandlers().remove(handler);
-						setDataSources(sources);
-						logger.info("Handler '" + handlerClass + "' removed from datasource '" + sourceName + "'");
-						return;
-					}
-				}
-				throw new ConfigurationException("Datasource '" + sourceName + "' does not have this handler");
+				deleteHandlerFromDatasource(source, handlerClass);
+				setDataSources(sources);
+
 			}
 		}
 		throw new ConfigurationException("Datasource '" + sourceName + "' not found");
+	}
+
+	private void deleteHandlerFromDatasource(Source source, String handlerClass) throws ConfigurationException {
+
+		for (String handler : source.getHandlers()) {
+			if (handler.equals(handlerClass)) {
+				source.getHandlers().remove(handler);
+				logger.info("Handler '" + handlerClass + "' removed from datasource '" + source.getName() + "'");
+				return;
+			}
+		}
+		throw new ConfigurationException("Datasource '" + source.getName() + "' does not have this handler");
 	}
 
 	/**

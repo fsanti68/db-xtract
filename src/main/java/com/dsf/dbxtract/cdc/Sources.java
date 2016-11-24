@@ -30,13 +30,13 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 public class Sources {
 
-	private List<Source> sources = null;
+	private List<Source> sourceList = null;
 	private long interval = 5000L;
 
 	public List<Source> getSources() {
-		if (sources == null)
-			sources = new ArrayList<Source>();
-		return sources;
+		if (sourceList == null)
+			sourceList = new ArrayList<Source>();
+		return sourceList;
 	}
 
 	/**

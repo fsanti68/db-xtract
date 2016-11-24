@@ -1,5 +1,16 @@
 package com.dsf.dbxtract.cdc;
 
+/**
+ * Configuration exceptions:
+ * <ul>
+ * <li>config properties not found</li>
+ * <li>required parameter</li>
+ * <li>zookeeper's connection or config repository failure</li>
+ * </ul>
+ * 
+ * @author fabio de santi
+ *
+ */
 public class ConfigurationException extends Exception {
 
 	private static final long serialVersionUID = 1L;

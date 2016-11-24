@@ -67,7 +67,8 @@ public class JournalExecutor implements Runnable {
 	private List<String> journalColumns = null;
 
 	/**
-	 * 
+	 * @param agentName
+	 *            cdc agent's assigned name
 	 * @param zookeeper
 	 *            connection string to ZooKeeper server
 	 * @param handler
@@ -156,25 +157,35 @@ public class JournalExecutor implements Runnable {
 			ps.setFetchSize(handler.getBatchSize());
 			ps.setMaxRows(handler.getBatchSize());
 			rs = ps.executeQuery();
-			while (rs.next()) {
-				if (journalColumns == null) {
-					journalColumns = new ArrayList<String>();
-					for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-						journalColumns.add(rs.getMetaData().getColumnLabel(i + 1).toLowerCase());
-					}
-				}
-				Map<String, Object> map = new HashMap<String, Object>();
-				for (String col : journalColumns) {
-					map.put(col, rs.getObject(col));
-				}
-				result.add(map);
-			}
+			copyResultsetToMap(rs, result);
 
 		} finally {
 			DBUtils.close(rs);
 			DBUtils.close(ps);
 		}
 		return result;
+	}
+
+	private void copyResultsetToMap(ResultSet rs, List<Map<String, Object>> result) throws SQLException {
+
+		if (rs == null)
+			throw new SQLException("result is null");
+		if (result == null)
+			throw new NullPointerException("result map is null");
+
+		while (rs.next()) {
+			if (journalColumns == null) {
+				journalColumns = new ArrayList<String>();
+				for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
+					journalColumns.add(rs.getMetaData().getColumnLabel(i + 1).toLowerCase());
+				}
+			}
+			Map<String, Object> map = new HashMap<String, Object>();
+			for (String col : journalColumns) {
+				map.put(col, rs.getObject(col));
+			}
+			result.add(map);
+		}
 	}
 
 	/**
@@ -202,9 +213,9 @@ public class JournalExecutor implements Runnable {
 			Data data = null;
 			ps = new NamedParameterStatement(conn, query);
 			for (Map<String, Object> keys : rows) {
-				for (String k : keys.keySet()) {
-					if (query.contains(":" + k)) {
-						ps.setObject(k, keys.get(k));
+				for (Map.Entry<String, Object> e : keys.entrySet()) {
+					if (query.contains(":" + e.getKey())) {
+						ps.setObject(e.getKey(), e.getValue());
 					}
 				}
 				DBUtils.close(rs);
@@ -270,7 +281,7 @@ public class JournalExecutor implements Runnable {
 	 * 
 	 * @param rows
 	 */
-	private void markLastLoaded(CuratorFramework client, List<Map<String, Object>> rows)  {
+	private void markLastLoaded(CuratorFramework client, List<Map<String, Object>> rows) {
 
 		if (rows == null || rows.isEmpty())
 			return;

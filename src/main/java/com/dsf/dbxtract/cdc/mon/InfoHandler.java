@@ -90,7 +90,6 @@ class InfoHandler implements HttpHandler {
 				StatEntry entry = mapper.readValue(b, Statistics.StatEntry.class);
 				stat.getMap().put(handler, entry);
 			}
-			client.close();
 
 			StringWriter writer = new StringWriter();
 			mapper.writeValue(writer, stat);
