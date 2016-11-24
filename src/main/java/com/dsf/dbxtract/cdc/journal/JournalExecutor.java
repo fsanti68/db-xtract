@@ -39,6 +39,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 
 import com.dsf.dbxtract.cdc.App;
+import com.dsf.dbxtract.cdc.ConfigurationException;
 import com.dsf.dbxtract.cdc.Data;
 import com.dsf.dbxtract.cdc.Source;
 import com.dsf.dbxtract.cdc.mon.Statistics;
@@ -106,7 +107,7 @@ public class JournalExecutor implements Runnable {
 		return prefix;
 	}
 
-	private Long getLastWindowId(CuratorFramework client) throws Exception {
+	private Long getLastWindowId(CuratorFramework client) throws ConfigurationException {
 
 		try {
 			byte[] b = client.getData().forPath(getPrefix() + "/lastWindowId");
@@ -118,6 +119,9 @@ public class JournalExecutor implements Runnable {
 		} catch (NoNodeException nne) {
 			logger.warn(nne);
 			return 0L;
+
+		} catch (Exception e) {
+			throw new ConfigurationException("Failed to access zk entry", e);
 		}
 	}
 
@@ -138,13 +142,14 @@ public class JournalExecutor implements Runnable {
 		try {
 			// Obtem os dados do journal
 			logger.debug(agentName + " :: getting journalized data");
-			String baseQuery = "select * from " + handler.getJournalTable();
+			StringBuilder baseQuery = new StringBuilder("select * from ").append(handler.getJournalTable());
 			if (JournalStrategy.WINDOW.equals(handler.getStrategy())) {
 				Long lastWindowId = getLastWindowId(client);
-				ps = conn.prepareStatement(baseQuery + " where window_id > ?");
+				baseQuery.append(" where window_id > ?");
+				ps = conn.prepareStatement(baseQuery.toString());
 				ps.setLong(1, lastWindowId);
 			} else {
-				ps = conn.prepareStatement(baseQuery);
+				ps = conn.prepareStatement(baseQuery.toString());
 			}
 			ps.setFetchSize(handler.getBatchSize());
 			ps.setMaxRows(handler.getBatchSize());
@@ -262,7 +267,7 @@ public class JournalExecutor implements Runnable {
 	 * 
 	 * @param rows
 	 */
-	private void markLastLoaded(CuratorFramework client, List<Map<String, Object>> rows) throws Exception {
+	private void markLastLoaded(CuratorFramework client, List<Map<String, Object>> rows)  {
 
 		if (rows == null || rows.isEmpty())
 			return;

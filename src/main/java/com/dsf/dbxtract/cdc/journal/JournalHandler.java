@@ -17,6 +17,7 @@
 package com.dsf.dbxtract.cdc.journal;
 
 import com.dsf.dbxtract.cdc.Data;
+import com.dsf.dbxtract.cdc.PublishException;
 
 /**
  * Interface to be implemented by capture executors.
@@ -53,13 +54,13 @@ public interface JournalHandler {
 	 * Publishes captured data (like writing a file or publishing to a kafka
 	 * queue).
 	 */
-	public void publish(Data data) throws Exception;
+	public void publish(Data data) throws PublishException;
 
 	/**
 	 * Establish the journal strategy:
 	 * <ul>
 	 * <li>DELETE - removes imported rows from journal table</li>
-	 * <li>WINDOW - memorizes 
+	 * <li>WINDOW - memorizes
 	 * </ul>
 	 * 
 	 * @return

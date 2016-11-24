@@ -16,7 +16,9 @@
 
 package com.dsf.dbxtract.cdc.journal;
 
+import com.dsf.dbxtract.cdc.ConfigurationException;
 import com.dsf.dbxtract.cdc.Data;
+import com.dsf.dbxtract.cdc.PublishException;
 import com.dsf.dbxtract.cdc.Publisher;
 
 /**
@@ -34,15 +36,15 @@ public class SimpleJournalHandler implements JournalHandler {
 	private JournalStrategy strategy;
 
 	public SimpleJournalHandler(String journalTable, String query, int batchSize, Publisher publisher,
-			JournalStrategy strategy) throws Exception {
+			JournalStrategy strategy) throws ConfigurationException {
 		if (journalTable == null || journalTable.isEmpty())
-			throw new Exception("journal table name is required");
+			throw new ConfigurationException("journal table name is required");
 		if (query == null || query.isEmpty())
-			throw new Exception("query is required");
+			throw new ConfigurationException("query is required");
 		if (batchSize <= 0)
-			throw new Exception("batch size must be a positive integer");
+			throw new ConfigurationException("batch size must be a positive integer");
 		if (publisher == null)
-			throw new Exception("published is required");
+			throw new ConfigurationException("published is required");
 		this.journal = journalTable;
 		this.query = query;
 		this.batchSize = batchSize;
@@ -62,7 +64,7 @@ public class SimpleJournalHandler implements JournalHandler {
 		return query;
 	}
 
-	public void publish(Data data) throws Exception {
+	public void publish(Data data) throws PublishException {
 		publisher.publish(data);
 	}
 

@@ -46,6 +46,14 @@ public class App {
 
 	private static Logger logger = LogManager.getLogger(App.class.getName());
 
+	private static final String CONFIG = "config";
+	private static final String MONITOR = "monitor";
+	private static final String SOURCEADD = "source-add";
+	private static final String SOURCEDEL = "source-delete";
+	private static final String SOURCEINTVL = "source-interval";
+	private static final String HANDLERADD = "handler-add";
+	private static final String HANDLERDEL = "handler-delete";
+
 	public static final String BASEPREFIX = "/dbxtract/cdc";
 
 	private Config config = null;
@@ -111,29 +119,29 @@ public class App {
 
 		Options options = new Options();
 		// required: --config <file>
-		options.addOption(Option.builder().longOpt("config").hasArg().numberOfArgs(1).argName("file")
+		options.addOption(Option.builder().longOpt(CONFIG).hasArg().numberOfArgs(1).argName("file")
 				.desc("configuration file pathname").required().build());
 		// optional: --monitor <port>
-		options.addOption(Option.builder().longOpt("monitor").hasArg().numberOfArgs(1).argName("port")
+		options.addOption(Option.builder().longOpt(MONITOR).hasArg().numberOfArgs(1).argName("port")
 				.desc("monitoring port number (default: 9000)").required(false).build());
 
 		// commands:
 		OptionGroup commands = new OptionGroup();
 		// --source-add <name> <conn> <driver> <user> <password>
-		commands.addOption(Option.builder().longOpt("source-add").numberOfArgs(5)
-				.argName("name conn driver user passwd").desc("add new datasource").required(false).build());
+		commands.addOption(Option.builder().longOpt(SOURCEADD).numberOfArgs(5).argName("name conn driver user passwd")
+				.desc("add new datasource").required(false).build());
 		// --source-delete <name>
-		commands.addOption(Option.builder().longOpt("source-delete").numberOfArgs(1).argName("name")
-				.desc("remove datasource").required(false).build());
+		commands.addOption(Option.builder().longOpt(SOURCEDEL).numberOfArgs(1).argName("name").desc("remove datasource")
+				.required(false).build());
 		// --source-interval <interval ms>
-		commands.addOption(Option.builder().longOpt("source-interval").numberOfArgs(1).argName("millisecs")
+		commands.addOption(Option.builder().longOpt(SOURCEINTVL).numberOfArgs(1).argName("millisecs")
 				.desc("set datasource scan interval").required(false).build());
 		// --handler-add <source> <handler>
-		commands.addOption(Option.builder().longOpt("handler-add").numberOfArgs(2).argName("source handlerClass")
+		commands.addOption(Option.builder().longOpt(HANDLERADD).numberOfArgs(2).argName("source handlerClass")
 				.desc("add new handler to an existing datasource (i.e. handler-add myds com.cdc.MyHandler)")
 				.required(false).build());
 		// --handler-delete <source> <handler>
-		commands.addOption(Option.builder().longOpt("handler-delete").numberOfArgs(2).argName("source handlerClass")
+		commands.addOption(Option.builder().longOpt(HANDLERDEL).numberOfArgs(2).argName("source handlerClass")
 				.desc("remove handler from datasource (i.e. handler-delete myds com.cdc.MyHandler)").required(false)
 				.build());
 		// --list
@@ -145,6 +153,73 @@ public class App {
 		options.addOptionGroup(commands);
 
 		return options;
+	}
+
+	private static void parseCommand(CommandLine cmd) throws Exception {
+
+		int monitorPort = 9001;
+		String configFilename = null;
+		Config config = null;
+
+		if (cmd.hasOption(CONFIG)) {
+			configFilename = cmd.getOptionValue(CONFIG);
+			// configure log4j
+			PropertyConfigurator.configure(configFilename);
+			// obtain configuration
+			config = new Config(configFilename);
+		} else {
+			throw new InvalidParameterException("Parameter required: --config");
+		}
+		if (cmd.hasOption(MONITOR)) {
+			monitorPort = Integer.parseInt(cmd.getOptionValue(MONITOR));
+		}
+		if (cmd.hasOption(SOURCEADD)) {
+			String[] params = cmd.getOptionValues(SOURCEADD);
+			if (params == null || params.length < 5)
+				throw new InvalidParameterException(
+						"Parameters required: <source name> <connection string> <driver class> <username> <password>");
+			config.datasourceAdd(params[0], params[1], params[2], params[3], params[4]);
+
+		} else if (cmd.hasOption(SOURCEDEL)) {
+			String param = cmd.getOptionValue(SOURCEDEL);
+			config.datasourceDelete(param);
+
+		} else if (cmd.hasOption(SOURCEINTVL)) {
+			String param = cmd.getOptionValue(SOURCEINTVL);
+			config.datasourceInterval(param);
+
+		} else if (cmd.hasOption(HANDLERADD)) {
+			String[] params = cmd.getOptionValues(HANDLERADD);
+			if (params == null || params.length < 2)
+				throw new InvalidParameterException("Parameters required: <sourceName> <handlerClass>");
+			config.handlerAdd(params[0], params[1]);
+
+		} else if (cmd.hasOption(HANDLERDEL)) {
+			String[] params = cmd.getOptionValues(HANDLERDEL);
+			if (params == null || params.length < 2)
+				throw new InvalidParameterException("Parameters required: <sourceName> <handlerClass>");
+			config.handlerDelete(params[0], params[1]);
+
+		} else if (cmd.hasOption("list")) {
+			config.listAll();
+
+		} else if (cmd.hasOption("start")) {
+			System.out.println("Welcome to db-xtract");
+
+			// get db-xtract configuration
+			config.report();
+
+			// Starts monitor server
+			new Monitor(monitorPort, config);
+
+			// Starts service
+			App app = new App(config);
+			app.start();
+
+		} else {
+			throw new ParseException(
+					"A command is required: --source-add, --source-delete, --source-interval, --handler-add, --handler-delete, --list or --start");
+		}
 	}
 
 	/**
@@ -178,74 +253,13 @@ public class App {
 	 */
 	public static void main(String[] args) {
 
-		int monitorPort = 9001;
-		String configFilename = null;
-		Config config = null;
 		try {
 
 			Options options = prepareCmdLineOptions();
 			CommandLineParser parser = new DefaultParser();
 			try {
 				CommandLine cmd = parser.parse(options, args);
-				if (cmd.hasOption("config")) {
-					configFilename = cmd.getOptionValue("config");
-					// configure log4j
-					PropertyConfigurator.configure(configFilename);
-					// obtain configuration
-					config = new Config(configFilename);
-				} else {
-					throw new Exception("Parameter required: --config");
-				}
-				if (cmd.hasOption("monitor")) {
-					monitorPort = Integer.parseInt(cmd.getOptionValue("monitor"));
-				}
-				if (cmd.hasOption("source-add")) {
-					String[] params = cmd.getOptionValues("source-add");
-					if (params == null || params.length < 5)
-						throw new InvalidParameterException(
-								"Parameters required: <source name> <connection string> <driver class> <username> <password>");
-					config.datasourceAdd(params[0], params[1], params[2], params[3], params[4]);
-
-				} else if (cmd.hasOption("source-delete")) {
-					String param = cmd.getOptionValue("source-delete");
-					config.datasourceDelete(param);
-
-				} else if (cmd.hasOption("source-interval")) {
-					String param = cmd.getOptionValue("source-interval");
-					config.datasourceInterval(param);
-
-				} else if (cmd.hasOption("handler-add")) {
-					String[] params = cmd.getOptionValues("handler-add");
-					if (params == null || params.length < 2)
-						throw new InvalidParameterException("Parameters required: <sourceName> <handlerClass>");
-					config.handlerAdd(params[0], params[1]);
-
-				} else if (cmd.hasOption("handler-delete")) {
-					String[] params = cmd.getOptionValues("handler-delete");
-					if (params == null || params.length < 2)
-						throw new InvalidParameterException("Parameters required: <sourceName> <handlerClass>");
-					config.handlerDelete(params[0], params[1]);
-
-				} else if (cmd.hasOption("list")) {
-					config.listAll();
-
-				} else if (cmd.hasOption("start")) {
-					System.out.println("Welcome to db-xtract");
-
-					// get db-xtract configuration
-					config.report();
-
-					// Starts monitor server
-					new Monitor(monitorPort, config);
-
-					// Starts service
-					App app = new App(config);
-					app.start();
-
-				} else {
-					throw new ParseException(
-							"A command is required: --source-add, --source-delete, --source-interval, --handler-add, --handler-delete, --list or --start");
-				}
+				parseCommand(cmd);
 
 			} catch (ParseException e1) {
 				HelpFormatter formatter = new HelpFormatter();

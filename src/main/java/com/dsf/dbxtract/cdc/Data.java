@@ -66,13 +66,13 @@ public class Data {
 	 *            an array of objects (column's data)
 	 * @throws Exception
 	 */
-	public void append(Object[] values) throws Exception {
+	public void append(Object[] values) throws DataColumnMatchException {
 
 		if (values == null)
 			return;
 
 		if (values.length != columnNames.length)
-			throw new Exception("data array size differs from column's count");
+			throw new DataColumnMatchException("data array size differs from column's count");
 
 		rows.add(values);
 	}

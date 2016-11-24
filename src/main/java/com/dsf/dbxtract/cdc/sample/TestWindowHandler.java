@@ -20,6 +20,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.dsf.dbxtract.cdc.Data;
+import com.dsf.dbxtract.cdc.PublishException;
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
 import com.dsf.dbxtract.cdc.journal.JournalStrategy;
 
@@ -55,7 +56,7 @@ public class TestWindowHandler implements JournalHandler {
 		return "SELECT * FROM TEST WHERE KEY1 = :key1 AND KEY2 = :key2";
 	}
 
-	public void publish(Data data) throws Exception {
+	public void publish(Data data) throws PublishException {
 		logger.info("Data to Publish (columns/rows): " + data.getColumnNames().length + "/" + data.getRows().size()
 				+ " rows");
 

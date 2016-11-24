@@ -18,18 +18,16 @@ package com.dsf.dbxtract.cdc;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import javax.naming.ConfigurationException;
 
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -38,6 +36,8 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -111,15 +111,19 @@ public class Config {
 			logger.warn("No datasources defined");
 	}
 
-	private CuratorFramework getClientForSources() throws Exception {
+	private CuratorFramework getClientForSources() throws ConfigurationException {
 
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 		CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
 		client.start();
 
 		String path = App.BASEPREFIX + "/config";
-		if (client.checkExists().forPath(path) == null)
-			client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
+		try {
+			if (client.checkExists().forPath(path) == null)
+				client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
+		} catch (Exception e) {
+			throw new ConfigurationException("Failed to access zk entry " + path, e);
+		}
 
 		return client;
 	}
@@ -130,43 +134,60 @@ public class Config {
 	 * <i>config</i> entry.
 	 * 
 	 * @return data sources list
+	 * @throws IOException
+	 * @throws JsonParseException
 	 * @throws Exception
 	 */
-	public Sources getDataSources() throws Exception {
+	public Sources getDataSources() throws ConfigurationException, JsonParseException, IOException {
 
 		String path = App.BASEPREFIX + "/config";
 		CuratorFramework client = getClientForSources();
-		if (client.checkExists().forPath(path) == null)
-			throw new ConfigurationException("No configuration found (zk): " + path);
-		byte[] json = client.getData().forPath(path);
-		client.close();
-		if (json == null || json.length == 0)
-			return null;
 
+		byte[] json = null;
 		try {
+			if (client.checkExists().forPath(path) == null)
+				throw new ConfigurationException("No configuration found (zk): " + path);
+			json = client.getData().forPath(path);
+			client.close();
+			if (json == null || json.length == 0)
+				return null;
+
 			ObjectMapper mapper = new ObjectMapper();
 			return mapper.readValue(json, Sources.class);
 
 		} catch (JsonMappingException jme) {
-			logger.error("Invalid config data: " + new String(json), jme);
-
+			String s = json == null ? "unknown" : new String(json);
+			logger.error("Invalid config data: " + s, jme);
 			return null;
+
+		} catch (Exception e) {
+			throw new ConfigurationException("Failed to access zk entry", e);
 		}
 	}
 
 	/**
 	 * 
 	 * @param sources
+	 * @throws ConfigurationException
+	 * @throws IOException
+	 * @throws JsonMappingException
+	 * @throws JsonGenerationException
 	 * @throws Exception
 	 */
-	private void setDataSources(Sources sources) throws Exception {
+	private void setDataSources(Sources sources)
+			throws ConfigurationException, JsonGenerationException, JsonMappingException, IOException {
 
 		String path = App.BASEPREFIX + "/config";
 		CuratorFramework client = getClientForSources();
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			byte[] data = mapper.writeValueAsBytes(sources);
-			client.setData().forPath(path, data);
+			try {
+				client.setData().forPath(path, data);
+
+			} catch (Exception e) {
+				throw new ConfigurationException("Failed to access zk entry " + path, e);
+			}
 
 		} finally {
 			client.close();
@@ -306,9 +327,9 @@ public class Config {
 					throw new ConfigurationException("A datasource named '" + name + "' already exists");
 			}
 			if (name == null || name.isEmpty())
-				throw new InvalidParameterException("A name must be provided");
+				throw new ConfigurationException("A name must be provided");
 			if (conn == null || conn.isEmpty())
-				throw new InvalidParameterException("A connection string must be provided");
+				throw new ConfigurationException("A connection string must be provided");
 
 		} else {
 			sources = new Sources();
@@ -324,9 +345,11 @@ public class Config {
 	 * 
 	 * @param sourceName
 	 *            datasource name
+	 * @throws IOException
+	 * @throws JsonParseException
 	 * @throws Exception
 	 */
-	public void datasourceDelete(String sourceName) throws Exception {
+	public void datasourceDelete(String sourceName) throws ConfigurationException, JsonParseException, IOException {
 
 		Sources sources = getDataSources();
 		if (sources != null) {
@@ -338,10 +361,10 @@ public class Config {
 					return;
 				}
 			}
-			throw new InvalidParameterException("Datasource named '" + sourceName + "' not found!");
+			throw new ConfigurationException("Datasource named '" + sourceName + "' not found!");
 
 		} else
-			throw new InvalidParameterException("No datasources defined");
+			throw new ConfigurationException("No datasources defined");
 	}
 
 	/**
@@ -383,14 +406,14 @@ public class Config {
 
 		Sources sources = getDataSources();
 		if (sources == null)
-			throw new Exception("No datasources found");
+			throw new ConfigurationException("No datasource found");
 
 		for (Source source : sources.getSources()) {
 			if (source.getName().equals(sourceName)) {
 				for (String handler : source.getHandlers()) {
 					if (handler.equals(handlerClass)) {
-						throw new Exception("The handler '" + handlerClass + "' already exists for datasource '"
-								+ sourceName + "'");
+						throw new ConfigurationException("The handler '" + handlerClass
+								+ "' already exists for datasource '" + sourceName + "'");
 					}
 				}
 				try {
