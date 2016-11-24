@@ -55,6 +55,7 @@ public class Config {
 	private Properties props;
 	private String agentName = null;
 	private Map<JournalHandler, Source> handlerMap = null;
+	private CuratorFramework client = null;
 
 	/**
 	 * Loads configuration file.
@@ -113,16 +114,18 @@ public class Config {
 
 	private CuratorFramework getClientForSources() throws ConfigurationException {
 
-		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-		CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
-		client.start();
+		if (client == null) {
+			RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+			client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
+			client.start();
 
-		String path = App.BASEPREFIX + "/config";
-		try {
-			if (client.checkExists().forPath(path) == null)
-				client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
-		} catch (Exception e) {
-			throw new ConfigurationException("Failed to access zk entry " + path, e);
+			String path = App.BASEPREFIX + "/config";
+			try {
+				if (client.checkExists().forPath(path) == null)
+					client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
+			} catch (Exception e) {
+				throw new ConfigurationException("Failed to access zk entry " + path, e);
+			}
 		}
 
 		return client;
@@ -143,7 +146,7 @@ public class Config {
 		String path = App.BASEPREFIX + "/config";
 		CuratorFramework client = getClientForSources();
 
-		byte[] json = null;
+		byte[] json;
 		try {
 			if (client.checkExists().forPath(path) == null)
 				throw new ConfigurationException("No configuration found (zk): " + path);
@@ -156,8 +159,7 @@ public class Config {
 			return mapper.readValue(json, Sources.class);
 
 		} catch (JsonMappingException jme) {
-			String s = json == null ? "unknown" : new String(json);
-			logger.error("Invalid config data: " + s, jme);
+			logger.error("Invalid config data on " + path, jme);
 			return null;
 
 		} catch (Exception e) {

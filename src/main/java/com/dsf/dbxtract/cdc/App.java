@@ -46,13 +46,13 @@ public class App {
 
 	private static Logger logger = LogManager.getLogger(App.class.getName());
 
-	private static final String CONFIG = "config";
-	private static final String MONITOR = "monitor";
-	private static final String SOURCEADD = "source-add";
-	private static final String SOURCEDEL = "source-delete";
-	private static final String SOURCEINTVL = "source-interval";
-	private static final String HANDLERADD = "handler-add";
-	private static final String HANDLERDEL = "handler-delete";
+	private static final String PARAM_CONFIG = "config";
+	private static final String PARAM_MONITOR = "monitor";
+	private static final String PARAM_SOURCEADD = "source-add";
+	private static final String PARAM_SOURCEDEL = "source-delete";
+	private static final String PARAM_SOURCEINTVL = "source-interval";
+	private static final String PARAM_HANDLERADD = "handler-add";
+	private static final String PARAM_HANDLERDEL = "handler-delete";
 
 	public static final String BASEPREFIX = "/dbxtract/cdc";
 
@@ -119,29 +119,29 @@ public class App {
 
 		Options options = new Options();
 		// required: --config <file>
-		options.addOption(Option.builder().longOpt(CONFIG).hasArg().numberOfArgs(1).argName("file")
+		options.addOption(Option.builder().longOpt(PARAM_CONFIG).hasArg().numberOfArgs(1).argName("file")
 				.desc("configuration file pathname").required().build());
 		// optional: --monitor <port>
-		options.addOption(Option.builder().longOpt(MONITOR).hasArg().numberOfArgs(1).argName("port")
+		options.addOption(Option.builder().longOpt(PARAM_MONITOR).hasArg().numberOfArgs(1).argName("port")
 				.desc("monitoring port number (default: 9000)").required(false).build());
 
 		// commands:
 		OptionGroup commands = new OptionGroup();
 		// --source-add <name> <conn> <driver> <user> <password>
-		commands.addOption(Option.builder().longOpt(SOURCEADD).numberOfArgs(5).argName("name conn driver user passwd")
-				.desc("add new datasource").required(false).build());
+		commands.addOption(Option.builder().longOpt(PARAM_SOURCEADD).numberOfArgs(5)
+				.argName("name conn driver user passwd").desc("add new datasource").required(false).build());
 		// --source-delete <name>
-		commands.addOption(Option.builder().longOpt(SOURCEDEL).numberOfArgs(1).argName("name").desc("remove datasource")
-				.required(false).build());
+		commands.addOption(Option.builder().longOpt(PARAM_SOURCEDEL).numberOfArgs(1).argName("name")
+				.desc("remove datasource").required(false).build());
 		// --source-interval <interval ms>
-		commands.addOption(Option.builder().longOpt(SOURCEINTVL).numberOfArgs(1).argName("millisecs")
+		commands.addOption(Option.builder().longOpt(PARAM_SOURCEINTVL).numberOfArgs(1).argName("millisecs")
 				.desc("set datasource scan interval").required(false).build());
 		// --handler-add <source> <handler>
-		commands.addOption(Option.builder().longOpt(HANDLERADD).numberOfArgs(2).argName("source handlerClass")
+		commands.addOption(Option.builder().longOpt(PARAM_HANDLERADD).numberOfArgs(2).argName("source handlerClass")
 				.desc("add new handler to an existing datasource (i.e. handler-add myds com.cdc.MyHandler)")
 				.required(false).build());
 		// --handler-delete <source> <handler>
-		commands.addOption(Option.builder().longOpt(HANDLERDEL).numberOfArgs(2).argName("source handlerClass")
+		commands.addOption(Option.builder().longOpt(PARAM_HANDLERDEL).numberOfArgs(2).argName("source handlerClass")
 				.desc("remove handler from datasource (i.e. handler-delete myds com.cdc.MyHandler)").required(false)
 				.build());
 		// --list
@@ -157,12 +157,12 @@ public class App {
 
 	private static void parseCommand(CommandLine cmd) throws Exception {
 
-		int monitorPort = 9001;
-		String configFilename = null;
-		Config config = null;
+		int monitorPort = 9000;
+		String configFilename;
+		Config config;
 
-		if (cmd.hasOption(CONFIG)) {
-			configFilename = cmd.getOptionValue(CONFIG);
+		if (cmd.hasOption(PARAM_CONFIG)) {
+			configFilename = cmd.getOptionValue(PARAM_CONFIG);
 			// configure log4j
 			PropertyConfigurator.configure(configFilename);
 			// obtain configuration
@@ -170,32 +170,32 @@ public class App {
 		} else {
 			throw new InvalidParameterException("Parameter required: --config");
 		}
-		if (cmd.hasOption(MONITOR)) {
-			monitorPort = Integer.parseInt(cmd.getOptionValue(MONITOR));
+		if (cmd.hasOption(PARAM_MONITOR)) {
+			monitorPort = Integer.parseInt(cmd.getOptionValue(PARAM_MONITOR));
 		}
-		if (cmd.hasOption(SOURCEADD)) {
-			String[] params = cmd.getOptionValues(SOURCEADD);
+		if (cmd.hasOption(PARAM_SOURCEADD)) {
+			String[] params = cmd.getOptionValues(PARAM_SOURCEADD);
 			if (params == null || params.length < 5)
 				throw new InvalidParameterException(
 						"Parameters required: <source name> <connection string> <driver class> <username> <password>");
 			config.datasourceAdd(params[0], params[1], params[2], params[3], params[4]);
 
-		} else if (cmd.hasOption(SOURCEDEL)) {
-			String param = cmd.getOptionValue(SOURCEDEL);
+		} else if (cmd.hasOption(PARAM_SOURCEDEL)) {
+			String param = cmd.getOptionValue(PARAM_SOURCEDEL);
 			config.datasourceDelete(param);
 
-		} else if (cmd.hasOption(SOURCEINTVL)) {
-			String param = cmd.getOptionValue(SOURCEINTVL);
+		} else if (cmd.hasOption(PARAM_SOURCEINTVL)) {
+			String param = cmd.getOptionValue(PARAM_SOURCEINTVL);
 			config.datasourceInterval(param);
 
-		} else if (cmd.hasOption(HANDLERADD)) {
-			String[] params = cmd.getOptionValues(HANDLERADD);
+		} else if (cmd.hasOption(PARAM_HANDLERADD)) {
+			String[] params = cmd.getOptionValues(PARAM_HANDLERADD);
 			if (params == null || params.length < 2)
 				throw new InvalidParameterException("Parameters required: <sourceName> <handlerClass>");
 			config.handlerAdd(params[0], params[1]);
 
-		} else if (cmd.hasOption(HANDLERDEL)) {
-			String[] params = cmd.getOptionValues(HANDLERDEL);
+		} else if (cmd.hasOption(PARAM_HANDLERDEL)) {
+			String[] params = cmd.getOptionValues(PARAM_HANDLERDEL);
 			if (params == null || params.length < 2)
 				throw new InvalidParameterException("Parameters required: <sourceName> <handlerClass>");
 			config.handlerDelete(params[0], params[1]);
@@ -204,7 +204,7 @@ public class App {
 			config.listAll();
 
 		} else if (cmd.hasOption("start")) {
-			System.out.println("Welcome to db-xtract");
+			logger.info("Welcome to db-xtract");
 
 			// get db-xtract configuration
 			config.report();
@@ -253,21 +253,18 @@ public class App {
 	 */
 	public static void main(String[] args) {
 
+		Options options = prepareCmdLineOptions();
 		try {
-
-			Options options = prepareCmdLineOptions();
 			CommandLineParser parser = new DefaultParser();
-			try {
-				CommandLine cmd = parser.parse(options, args);
-				parseCommand(cmd);
 
-			} catch (ParseException e1) {
-				HelpFormatter formatter = new HelpFormatter();
-				System.out.println("\n\n");
-				formatter.printHelp("java -jar dbxtract.jar", options, true);
+			CommandLine cmd = parser.parse(options, args);
+			parseCommand(cmd);
 
-				System.err.println(e1.getMessage());
-			}
+		} catch (ParseException e1) {
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("java -jar dbxtract.jar", options, true);
+
+			logger.error(e1);
 
 		} catch (Exception e) {
 			logger.fatal("Unable to start dbxtract", e);
