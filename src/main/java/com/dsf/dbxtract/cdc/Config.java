@@ -184,7 +184,8 @@ public class Config {
 	private void setDataSources(Sources sources) throws ConfigurationException {
 
 		String path = App.BASEPREFIX + "/config";
-		CuratorFramework zk = getClientForSources();
+		CuratorFramework zk = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
+		zk.start();
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			byte[] data = mapper.writeValueAsBytes(sources);
