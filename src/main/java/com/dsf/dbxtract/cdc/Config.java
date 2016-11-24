@@ -55,7 +55,6 @@ public class Config {
 	private Properties props;
 	private String agentName = null;
 	private Map<JournalHandler, Source> handlerMap = null;
-	private CuratorFramework client = null;
 
 	/**
 	 * Loads configuration file.
@@ -83,7 +82,7 @@ public class Config {
 		init();
 	}
 
-	private void init() throws Exception {
+	private void init() throws ConfigurationException {
 
 		// Prepare a handler's list and respective data sources
 		handlerMap = new HashMap<JournalHandler, Source>();
@@ -99,8 +98,7 @@ public class Config {
 							handlerMap.put(handler, source);
 
 						} catch (Exception e) {
-							logger.fatal("Unable to instantiate a handler: " + handlerName, e);
-							throw e;
+							throw new ConfigurationException("Unable to instantiate a handler: " + handlerName, e);
 						}
 					}
 
@@ -112,31 +110,19 @@ public class Config {
 			logger.warn("No datasources defined");
 	}
 
-	@Override
-	protected void finalize() throws Throwable {
-		if (client != null) {
-			logger.info("Closing zk client");
-			client.close();
-		}
-
-		super.finalize();
-	}
-
 	private CuratorFramework getClientForSources() throws ConfigurationException {
 
-		if (client == null) {
-			RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-			client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
-			client.start();
+		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+		CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
+		client.start();
 
-			String path = App.BASEPREFIX + "/config";
-			try {
-				if (client.checkExists().forPath(path) == null)
-					client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
+		String path = App.BASEPREFIX + "/config";
+		try {
+			if (client.checkExists().forPath(path) == null)
+				client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
 
-			} catch (Exception e) {
-				throw new ConfigurationException("Failed to access zk entry " + path, e);
-			}
+		} catch (Exception e) {
+			throw new ConfigurationException("Failed to access zk entry " + path, e);
 		}
 		return client;
 	}
@@ -151,6 +137,9 @@ public class Config {
 
 		} catch (Exception e) {
 			throw new ConfigurationException("failed to retrieve zk entry at " + path, e);
+
+		} finally {
+			zk.close();
 		}
 	}
 
@@ -204,6 +193,9 @@ public class Config {
 
 		} catch (Exception e) {
 			throw new ConfigurationException("Failed to save zk entry " + path, e);
+
+		} finally {
+			zk.close();
 		}
 	}
 
@@ -389,9 +381,10 @@ public class Config {
 	 * 
 	 * @param interval
 	 *            scan interval in milliseconds.
+	 * @throws ConfigurationException
 	 * @throws Exception
 	 */
-	public void datasourceInterval(String interval) throws Exception {
+	public void datasourceInterval(String interval) throws ConfigurationException {
 
 		Sources sources = getDataSources();
 		if (sources == null)
@@ -494,13 +487,18 @@ public class Config {
 	 * 
 	 * @throws Exception
 	 */
-	public void listAll() throws Exception {
+	public void listAll() throws ConfigurationException {
 		Sources sources = getDataSources();
 		if (sources == null)
-			throw new Exception("No datasources found!");
+			throw new ConfigurationException("No datasources found!");
 
 		ObjectMapper mapper = new ObjectMapper();
-		logger.info(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(sources));
+		try {
+			logger.info(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(sources));
+
+		} catch (Exception e) {
+			throw new ConfigurationException("failed to get datasource from zk", e);
+		}
 	}
 
 	@Override
