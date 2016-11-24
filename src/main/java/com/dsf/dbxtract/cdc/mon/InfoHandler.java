@@ -98,6 +98,9 @@ class InfoHandler implements HttpHandler {
 
 		} catch (Exception e) {
 			throw new ConfigurationException("failed to retrieve zk statistics at " + Statistics.ZOOPATH, e);
+
+		} finally {
+			client.close();
 		}
 	}
 

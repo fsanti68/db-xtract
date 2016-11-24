@@ -112,6 +112,16 @@ public class Config {
 			logger.warn("No datasources defined");
 	}
 
+	@Override
+	protected void finalize() throws Throwable {
+		if (client != null) {
+			logger.info("Closing zk client");
+			client.close();
+		}
+
+		super.finalize();
+	}
+
 	private CuratorFramework getClientForSources() throws ConfigurationException {
 
 		if (client == null) {
@@ -141,9 +151,6 @@ public class Config {
 
 		} catch (Exception e) {
 			throw new ConfigurationException("failed to retrieve zk entry at " + path, e);
-
-		} finally {
-			zk.close();
 		}
 	}
 
@@ -197,9 +204,6 @@ public class Config {
 
 		} catch (Exception e) {
 			throw new ConfigurationException("Failed to save zk entry " + path, e);
-
-		} finally {
-			zk.close();
 		}
 	}
 
