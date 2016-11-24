@@ -59,10 +59,13 @@ public class TestWindowHandler implements JournalHandler {
 	/**
 	 * Publish imported data to... (kafka, a file, a queue, another database,
 	 * etc)
+	 * 
+	 * @param data
+	 *            captured data object
 	 */
 	public void publish(Data data) throws PublishException {
-		logger.info("(window strategy) Data to Publish (columns/rows): " + data.getColumnNames().length + "/" + data.getRows().size()
-				+ " rows");
+		logger.info("(window strategy) Data to Publish (columns/rows): " + data.getColumnNames().length + "/"
+				+ data.getRows().size() + " rows");
 	}
 
 	@Override

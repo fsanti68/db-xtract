@@ -24,13 +24,25 @@ import java.sql.Statement;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+/**
+ * 
+ * @author fabio de santi
+ *
+ */
 public class DBUtils {
 
 	private static final Logger logger = LogManager.getLogger(DBUtils.class.getName());
 
+	/**
+	 * 
+	 */
 	private DBUtils() {
 	}
 
+	/**
+	 * 
+	 * @param rs
+	 */
 	public static void close(ResultSet rs) {
 		if (rs != null)
 			try {
@@ -41,6 +53,10 @@ public class DBUtils {
 			}
 	}
 
+	/**
+	 * 
+	 * @param stmt
+	 */
 	public static void close(Statement stmt) {
 		if (stmt != null)
 			try {
@@ -51,6 +67,10 @@ public class DBUtils {
 			}
 	}
 
+	/**
+	 * 
+	 * @param stmt
+	 */
 	public static void close(NamedParameterStatement stmt) {
 		if (stmt != null)
 			try {
@@ -61,6 +81,10 @@ public class DBUtils {
 			}
 	}
 
+	/**
+	 * 
+	 * @param c
+	 */
 	public static void close(Connection c) {
 		if (c != null)
 			try {

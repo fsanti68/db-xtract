@@ -32,6 +32,9 @@ public class Statistics {
 
 	private ObjectMapper mapper;
 
+	/**
+	 * 
+	 */
 	public Statistics() {
 		this.mapper = new ObjectMapper();
 	}
@@ -65,7 +68,8 @@ public class Statistics {
 	}
 
 	/**
-	 * 
+	 * @param client
+	 *            zookeeper client object
 	 * @param handler
 	 *            handler's name
 	 * @return {@link StatEntry} object with basic statistics for the given

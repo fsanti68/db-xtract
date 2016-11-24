@@ -213,20 +213,12 @@ public class JournalExecutor implements Runnable {
 			Data data = null;
 			ps = new NamedParameterStatement(conn, query);
 			for (Map<String, Object> keys : rows) {
-				for (Map.Entry<String, Object> e : keys.entrySet()) {
-					if (query.contains(":" + e.getKey())) {
-						ps.setObject(e.getKey(), e.getValue());
-					}
-				}
+				fillParameters(keys, query, ps);
 				DBUtils.close(rs);
 
 				rs = ps.executeQuery();
 				if (data == null) {
-					int cols = rs.getMetaData().getColumnCount();
-					String[] colNames = new String[cols];
-					for (int i = 0; i < cols; i++) {
-						colNames[i] = rs.getMetaData().getColumnLabel(i + 1);
-					}
+					String[] colNames = getColumnNamesFromResultSet(rs);
 					data = new Data(colNames);
 				}
 				while (rs.next()) {
@@ -238,6 +230,44 @@ public class JournalExecutor implements Runnable {
 		} finally {
 			DBUtils.close(rs);
 			DBUtils.close(ps);
+		}
+	}
+
+	/**
+	 * Retrieve column names from a resultset
+	 * 
+	 * @param rs
+	 *            query result set
+	 * @return array of column names
+	 * @throws SQLException
+	 */
+	private String[] getColumnNamesFromResultSet(ResultSet rs) throws SQLException {
+
+		int cols = rs.getMetaData().getColumnCount();
+		String[] colNames = new String[cols];
+		for (int i = 0; i < cols; i++) {
+			colNames[i] = rs.getMetaData().getColumnLabel(i + 1);
+		}
+		return colNames;
+	}
+
+	/**
+	 * Fill named parameter in a query from a Map<ColumnName and Value>.
+	 * 
+	 * @param map
+	 *            parameters map
+	 * @param query
+	 *            query statement
+	 * @param ps
+	 *            a named parameter statement
+	 * @throws SQLException
+	 */
+	private void fillParameters(Map<String, Object> map, String query, NamedParameterStatement ps) throws SQLException {
+
+		for (Map.Entry<String, Object> e : map.entrySet()) {
+			if (query.contains(":" + e.getKey())) {
+				ps.setObject(e.getKey(), e.getValue());
+			}
 		}
 	}
 

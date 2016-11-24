@@ -35,6 +35,15 @@ public class SimpleJournalHandler implements JournalHandler {
 	private Publisher publisher;
 	private JournalStrategy strategy;
 
+	/**
+	 * 
+	 * @param journalTable
+	 * @param query
+	 * @param batchSize
+	 * @param publisher
+	 * @param strategy
+	 * @throws ConfigurationException
+	 */
 	public SimpleJournalHandler(String journalTable, String query, int batchSize, Publisher publisher,
 			JournalStrategy strategy) throws ConfigurationException {
 		if (journalTable == null || journalTable.isEmpty())
@@ -52,18 +61,30 @@ public class SimpleJournalHandler implements JournalHandler {
 		this.strategy = strategy == null ? JournalStrategy.WINDOW : strategy;
 	}
 
+	/**
+	 * 
+	 */
 	public String getJournalTable() {
 		return journal;
 	}
 
+	/**
+	 * 
+	 */
 	public int getBatchSize() {
 		return batchSize;
 	}
 
+	/**
+	 * 
+	 */
 	public String getTargetQuery() {
 		return query;
 	}
 
+	/**
+	 * 
+	 */
 	public void publish(Data data) throws PublishException {
 		publisher.publish(data);
 	}

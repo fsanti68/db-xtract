@@ -53,6 +53,9 @@ public interface JournalHandler {
 	/**
 	 * Publishes captured data (like writing a file or publishing to a kafka
 	 * queue).
+	 * 
+	 * @param data
+	 *            object {@link Data} for captured data
 	 */
 	public void publish(Data data) throws PublishException;
 
