@@ -52,6 +52,8 @@ public class Config {
 
 	private static final Logger logger = LogManager.getLogger(Config.class.getName());
 
+	private RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+
 	private Properties props;
 	private String agentName = null;
 	private Map<JournalHandler, Source> handlerMap = null;
@@ -84,6 +86,19 @@ public class Config {
 
 	private void init() throws ConfigurationException {
 
+		// check if zk is ok
+		CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
+		client.start();
+
+		String path = App.BASEPREFIX + "/config";
+		try {
+			if (client.checkExists().forPath(path) == null)
+				client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
+
+		} catch (Exception e) {
+			throw new ConfigurationException("Failed to access zk entry " + path, e);
+		}
+		
 		// Prepare a handler's list and respective data sources
 		handlerMap = new HashMap<JournalHandler, Source>();
 		Sources sources = getDataSources();
@@ -110,26 +125,10 @@ public class Config {
 			logger.warn("No datasources defined");
 	}
 
-	private CuratorFramework getClientForSources() throws ConfigurationException {
-
-		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-		CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
-		client.start();
-
-		String path = App.BASEPREFIX + "/config";
-		try {
-			if (client.checkExists().forPath(path) == null)
-				client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
-
-		} catch (Exception e) {
-			throw new ConfigurationException("Failed to access zk entry " + path, e);
-		}
-		return client;
-	}
-
 	private byte[] getZkData(String path) throws ConfigurationException {
 
-		CuratorFramework zk = getClientForSources();
+		CuratorFramework zk = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
+		zk.start();
 		try {
 			if (zk.checkExists().forPath(path) == null)
 				throw new ConfigurationException("No configuration found (zk) at " + path);
