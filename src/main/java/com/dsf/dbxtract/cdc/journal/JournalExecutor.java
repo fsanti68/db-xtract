@@ -41,6 +41,7 @@ import org.apache.zookeeper.KeeperException.NoNodeException;
 import com.dsf.dbxtract.cdc.App;
 import com.dsf.dbxtract.cdc.ConfigurationException;
 import com.dsf.dbxtract.cdc.Data;
+import com.dsf.dbxtract.cdc.PublishException;
 import com.dsf.dbxtract.cdc.Source;
 import com.dsf.dbxtract.cdc.mon.Statistics;
 import com.dsf.utils.sql.DBUtils;
@@ -132,9 +133,10 @@ public class JournalExecutor implements Runnable {
 	 * @param conn
 	 * @return a Map list with column names and values
 	 * @throws SQLException
+	 * @throws ConfigurationException
 	 */
 	private List<Map<String, Object>> getJournalKeys(CuratorFramework client, Connection conn)
-			throws SQLException, Exception {
+			throws SQLException, ConfigurationException {
 
 		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 		PreparedStatement ps = null;
@@ -182,10 +184,11 @@ public class JournalExecutor implements Runnable {
 	 * @param rows
 	 * @throws SQLException
 	 * @throws IOException
+	 * @throws PublishException
 	 * @throws Exception
 	 */
 	private void selectAndPublish(Connection conn, List<Map<String, Object>> rows)
-			throws SQLException, IOException, Exception {
+			throws SQLException, IOException, PublishException {
 
 		if (rows.isEmpty()) {
 			logger.debug(agentName + " :: nothing to load");

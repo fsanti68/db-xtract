@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.dsf.dbxtract.cdc.Config;
+import com.dsf.dbxtract.cdc.ConfigurationException;
 import com.dsf.dbxtract.cdc.mon.Statistics.StatEntry;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -73,7 +74,7 @@ class InfoHandler implements HttpHandler {
 		return sb.toString();
 	}
 
-	private String getInfo() throws Exception {
+	private String getInfo() throws ConfigurationException {
 
 		if (mapper == null)
 			mapper = new ObjectMapper();
@@ -82,17 +83,22 @@ class InfoHandler implements HttpHandler {
 		CuratorFramework client = CuratorFrameworkFactory.newClient(config.getZooKeeper(), retryPolicy);
 		client.start();
 		Stat stat = new Stat();
-		List<String> handlers = client.getChildren().forPath(Statistics.ZOOPATH);
-		for (String handler : handlers) {
-			byte[] b = client.getData().forPath(Statistics.ZOOPATH + "/" + handler);
-			StatEntry entry = mapper.readValue(b, Statistics.StatEntry.class);
-			stat.getMap().put(handler, entry);
-		}
-		client.close();
+		try {
+			List<String> handlers = client.getChildren().forPath(Statistics.ZOOPATH);
+			for (String handler : handlers) {
+				byte[] b = client.getData().forPath(Statistics.ZOOPATH + "/" + handler);
+				StatEntry entry = mapper.readValue(b, Statistics.StatEntry.class);
+				stat.getMap().put(handler, entry);
+			}
+			client.close();
 
-		StringWriter writer = new StringWriter();
-		mapper.writeValue(writer, stat);
-		return writer.toString();
+			StringWriter writer = new StringWriter();
+			mapper.writeValue(writer, stat);
+			return writer.toString();
+
+		} catch (Exception e) {
+			throw new ConfigurationException("failed to retrieve zk statistics at " + Statistics.ZOOPATH, e);
+		}
 	}
 
 	@XmlRootElement

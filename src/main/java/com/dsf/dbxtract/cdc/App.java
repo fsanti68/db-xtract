@@ -15,6 +15,7 @@
  */
 package com.dsf.dbxtract.cdc;
 
+import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,6 +32,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.codehaus.jackson.JsonParseException;
 
 import com.dsf.dbxtract.cdc.journal.JournalExecutor;
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
@@ -81,9 +83,13 @@ public class App {
 	/**
 	 * Starts scanning services.
 	 * 
+	 * @throws ConfigurationException
+	 * @throws IOException
+	 * @throws JsonParseException
+	 * 
 	 * @throws Exception
 	 */
-	public void start() throws Exception {
+	public void start() throws ConfigurationException, JsonParseException, IOException {
 
 		// Get ZooKeeper's connection string
 		String zkConnection = config.getZooKeeper();

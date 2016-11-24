@@ -123,12 +123,28 @@ public class Config {
 			try {
 				if (client.checkExists().forPath(path) == null)
 					client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
+
 			} catch (Exception e) {
 				throw new ConfigurationException("Failed to access zk entry " + path, e);
 			}
 		}
-
 		return client;
+	}
+
+	private byte[] getZkData(String path) throws ConfigurationException {
+
+		CuratorFramework zk = getClientForSources();
+		try {
+			if (zk.checkExists().forPath(path) == null)
+				throw new ConfigurationException("No configuration found (zk) at " + path);
+			return zk.getData().forPath(path);
+
+		} catch (Exception e) {
+			throw new ConfigurationException("failed to retrieve zk entry at " + path, e);
+
+		} finally {
+			zk.close();
+		}
 	}
 
 	/**
@@ -141,20 +157,14 @@ public class Config {
 	 * @throws JsonParseException
 	 * @throws Exception
 	 */
-	public Sources getDataSources() throws ConfigurationException, JsonParseException, IOException {
+	public Sources getDataSources() throws ConfigurationException {
 
 		String path = App.BASEPREFIX + "/config";
-		CuratorFramework client = getClientForSources();
 
-		byte[] json;
+		byte[] json = getZkData(path);
+		if (json == null || json.length == 0)
+			return null;
 		try {
-			if (client.checkExists().forPath(path) == null)
-				throw new ConfigurationException("No configuration found (zk): " + path);
-			json = client.getData().forPath(path);
-			client.close();
-			if (json == null || json.length == 0)
-				return null;
-
 			ObjectMapper mapper = new ObjectMapper();
 			return mapper.readValue(json, Sources.class);
 
@@ -176,23 +186,20 @@ public class Config {
 	 * @throws JsonGenerationException
 	 * @throws Exception
 	 */
-	private void setDataSources(Sources sources)
-			throws ConfigurationException, JsonGenerationException, JsonMappingException, IOException {
+	private void setDataSources(Sources sources) throws ConfigurationException {
 
 		String path = App.BASEPREFIX + "/config";
-		CuratorFramework client = getClientForSources();
+		CuratorFramework zk = getClientForSources();
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			byte[] data = mapper.writeValueAsBytes(sources);
-			try {
-				client.setData().forPath(path, data);
+			zk.setData().forPath(path, data);
 
-			} catch (Exception e) {
-				throw new ConfigurationException("Failed to access zk entry " + path, e);
-			}
+		} catch (Exception e) {
+			throw new ConfigurationException("Failed to save zk entry " + path, e);
 
 		} finally {
-			client.close();
+			zk.close();
 		}
 	}
 
@@ -318,9 +325,13 @@ public class Config {
 	 *            username
 	 * @param pwd
 	 *            password
+	 * @throws IOException
+	 * @throws ConfigurationException
+	 * @throws JsonParseException
 	 * @throws Exception
 	 */
-	public void datasourceAdd(String name, String conn, String driverClass, String user, String pwd) throws Exception {
+	public void datasourceAdd(String name, String conn, String driverClass, String user, String pwd)
+			throws ConfigurationException {
 
 		Sources sources = getDataSources();
 		if (sources != null) {
@@ -351,7 +362,7 @@ public class Config {
 	 * @throws JsonParseException
 	 * @throws Exception
 	 */
-	public void datasourceDelete(String sourceName) throws ConfigurationException, JsonParseException, IOException {
+	public void datasourceDelete(String sourceName) throws ConfigurationException {
 
 		Sources sources = getDataSources();
 		if (sources != null) {
@@ -402,9 +413,14 @@ public class Config {
 	 *            datasource name
 	 * @param handlerClass
 	 *            handler class name
+	 * @throws IOException
+	 * @throws ConfigurationException
+	 * @throws JsonParseException
+	 * @throws ClassNotFoundException
 	 * @throws Exception
 	 */
-	public void handlerAdd(String sourceName, String handlerClass) throws Exception {
+	public void handlerAdd(String sourceName, String handlerClass)
+			throws JsonParseException, ConfigurationException, IOException, ClassNotFoundException {
 
 		Sources sources = getDataSources();
 		if (sources == null)
@@ -426,11 +442,12 @@ public class Config {
 					return;
 
 				} catch (ClassNotFoundException cnfe) {
-					throw new Exception("Unable to add handler '" + handlerClass + "': class not found", cnfe);
+					throw new ClassNotFoundException("Unable to add handler '" + handlerClass + "': class not found",
+							cnfe);
 				}
 			}
 		}
-		throw new Exception("Datasource '" + sourceName + "' not found");
+		throw new ConfigurationException("Datasource '" + sourceName + "' not found");
 	}
 
 	/**
@@ -440,13 +457,17 @@ public class Config {
 	 *            datasource name
 	 * @param handlerClass
 	 *            handler's class name
+	 * @throws IOException
+	 * @throws ConfigurationException
+	 * @throws JsonParseException
 	 * @throws Exception
 	 */
-	public void handlerDelete(String sourceName, String handlerClass) throws Exception {
+	public void handlerDelete(String sourceName, String handlerClass)
+			throws JsonParseException, ConfigurationException, IOException {
 
 		Sources sources = getDataSources();
 		if (sources == null)
-			throw new Exception("No datasources found");
+			throw new ConfigurationException("No datasources found");
 
 		for (Source source : sources.getSources()) {
 			if (source.getName().equals(sourceName)) {
@@ -458,10 +479,10 @@ public class Config {
 						return;
 					}
 				}
-				throw new Exception("Datasource '" + sourceName + "' does not have this handler");
+				throw new ConfigurationException("Datasource '" + sourceName + "' does not have this handler");
 			}
 		}
-		throw new Exception("Datasource '" + sourceName + "' not found");
+		throw new ConfigurationException("Datasource '" + sourceName + "' not found");
 	}
 
 	/**
