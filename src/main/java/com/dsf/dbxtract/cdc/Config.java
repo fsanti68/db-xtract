@@ -53,6 +53,8 @@ public class Config {
 
 	private static final Logger logger = LogManager.getLogger(Config.class.getName());
 
+	private static final String CONFIGPATH = "/config";
+
 	private RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 
 	private Properties props;
@@ -101,27 +103,16 @@ public class Config {
 	}
 
 	/**
-	 * Get configuration as a stream
+	 * Check zookeeper connection & config availability
 	 * 
-	 * @param stream
 	 * @throws ConfigurationException
 	 */
-	private void init(InputStream stream) throws ConfigurationException {
+	private void checkZooKeeper() throws ConfigurationException {
 
-		Properties props = new Properties();
-		try {
-			props.load(stream);
-
-		} catch (IOException e) {
-			throw new ConfigurationException("failed to load configuration", e);
-		}
-		this.props = props;
-
-		// check if zk is ok
 		CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
 		client.start();
 
-		String path = App.BASEPREFIX + "/config";
+		String path = App.BASEPREFIX + CONFIGPATH;
 		try {
 			if (client.checkExists().forPath(path) == null)
 				client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
@@ -132,6 +123,27 @@ public class Config {
 		} finally {
 			client.close();
 		}
+	}
+
+	/**
+	 * Get configuration as a stream
+	 * 
+	 * @param stream
+	 * @throws ConfigurationException
+	 */
+	private void init(InputStream stream) throws ConfigurationException {
+
+		Properties p = new Properties();
+		try {
+			p.load(stream);
+
+		} catch (IOException e) {
+			throw new ConfigurationException("failed to load configuration", e);
+		}
+		this.props = p;
+
+		// check if zk is ok
+		checkZooKeeper();
 
 		// Prepare a handler's list and respective data sources
 		handlerMap = new HashMap<JournalHandler, Source>();
@@ -140,16 +152,7 @@ public class Config {
 			List<String> affinity = getAffinity();
 			for (Source source : sources.getSources()) {
 				if (affinity.isEmpty() || affinity.contains(source.getName())) {
-					for (String handlerName : source.getHandlers()) {
-						JournalHandler handler;
-						try {
-							handler = (JournalHandler) Class.forName(handlerName).newInstance();
-							handlerMap.put(handler, source);
-
-						} catch (Exception e) {
-							throw new ConfigurationException("Unable to instantiate a handler: " + handlerName, e);
-						}
-					}
+					addHandlerToMap(source);
 
 				} else
 					logger.info("Source named '" + source.getName() + "' ignored: no match with affinity paramater");
@@ -157,6 +160,26 @@ public class Config {
 
 		} else
 			logger.warn("No datasources defined");
+	}
+
+	/**
+	 * Add a handler to the handler's map (handler x source)
+	 * 
+	 * @param source
+	 * @throws ConfigurationException
+	 */
+	private void addHandlerToMap(Source source) throws ConfigurationException {
+
+		for (String handlerName : source.getHandlers()) {
+			JournalHandler handler;
+			try {
+				handler = (JournalHandler) Class.forName(handlerName).newInstance();
+				handlerMap.put(handler, source);
+
+			} catch (Exception e) {
+				throw new ConfigurationException("Unable to instantiate a handler: " + handlerName, e);
+			}
+		}
 	}
 
 	private byte[] getZkData(String path) throws ConfigurationException {
@@ -188,7 +211,7 @@ public class Config {
 	 */
 	public Sources getDataSources() throws ConfigurationException {
 
-		String path = App.BASEPREFIX + "/config";
+		String path = App.BASEPREFIX + CONFIGPATH;
 
 		byte[] json = getZkData(path);
 		if (json == null || json.length == 0)
@@ -217,7 +240,7 @@ public class Config {
 	 */
 	private void setDataSources(Sources sources) throws ConfigurationException {
 
-		String path = App.BASEPREFIX + "/config";
+		String path = App.BASEPREFIX + CONFIGPATH;
 		CuratorFramework zk = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
 		zk.start();
 		try {

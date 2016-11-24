@@ -89,7 +89,7 @@ public class App {
 	 * 
 	 * @throws Exception
 	 */
-	public void start() throws ConfigurationException, JsonParseException, IOException {
+	public void start() throws ConfigurationException {
 
 		// Get ZooKeeper's connection string
 		String zkConnection = config.getZooKeeper();
