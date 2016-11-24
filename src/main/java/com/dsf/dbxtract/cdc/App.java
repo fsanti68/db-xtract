@@ -161,7 +161,7 @@ public class App {
 		return options;
 	}
 
-	private static void parseCommand(CommandLine cmd) throws Exception {
+	private static void parseCommand(CommandLine cmd) throws ConfigurationException, IOException, ParseException {
 
 		int monitorPort = 9000;
 		String configFilename;

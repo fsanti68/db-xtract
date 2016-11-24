@@ -18,6 +18,7 @@ package com.dsf.dbxtract.cdc;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -63,11 +64,19 @@ public class Config {
 	 * 
 	 * @param path
 	 *            file/path name
+	 * @throws ConfigurationException
 	 * @throws Exception
 	 */
-	public Config(String path) throws Exception {
+	public Config(String path) throws ConfigurationException {
 
-		this(new FileInputStream(new File(path)));
+		InputStream stream;
+		try {
+			stream = new FileInputStream(new File(path));
+
+		} catch (FileNotFoundException e) {
+			throw new ConfigurationException("configuration file not found: " + path, e);
+		}
+		init(stream);
 	}
 
 	/**
@@ -75,16 +84,30 @@ public class Config {
 	 * 
 	 * @param source
 	 *            configuration source stream
+	 * @throws IOException
+	 * @throws ConfigurationException
 	 * @throws Exception
 	 */
-	public Config(InputStream source) throws Exception {
-		Properties props = new Properties();
-		props.load(source);
-		this.props = props;
-		init();
+	public Config(InputStream source) throws ConfigurationException {
+		init(source);
 	}
 
-	private void init() throws ConfigurationException {
+	/**
+	 * Get configuration as a stream
+	 * 
+	 * @param stream
+	 * @throws ConfigurationException
+	 */
+	private void init(InputStream stream) throws ConfigurationException {
+
+		Properties props = new Properties();
+		try {
+			props.load(stream);
+
+		} catch (IOException e) {
+			throw new ConfigurationException("failed to load configuration", e);
+		}
+		this.props = props;
 
 		// check if zk is ok
 		CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
@@ -97,8 +120,11 @@ public class Config {
 
 		} catch (Exception e) {
 			throw new ConfigurationException("Failed to access zk entry " + path, e);
+
+		} finally {
+			client.close();
 		}
-		
+
 		// Prepare a handler's list and respective data sources
 		handlerMap = new HashMap<JournalHandler, Source>();
 		Sources sources = getDataSources();
@@ -416,8 +442,7 @@ public class Config {
 	 * @throws ClassNotFoundException
 	 * @throws Exception
 	 */
-	public void handlerAdd(String sourceName, String handlerClass)
-			throws JsonParseException, ConfigurationException, IOException, ClassNotFoundException {
+	public void handlerAdd(String sourceName, String handlerClass) throws ConfigurationException {
 
 		Sources sources = getDataSources();
 		if (sources == null)
@@ -439,7 +464,7 @@ public class Config {
 					return;
 
 				} catch (ClassNotFoundException cnfe) {
-					throw new ClassNotFoundException("Unable to add handler '" + handlerClass + "': class not found",
+					throw new ConfigurationException("Unable to add handler '" + handlerClass + "': class not found",
 							cnfe);
 				}
 			}
@@ -460,7 +485,7 @@ public class Config {
 	 * @throws Exception
 	 */
 	public void handlerDelete(String sourceName, String handlerClass)
-			throws JsonParseException, ConfigurationException, IOException {
+			throws ConfigurationException {
 
 		Sources sources = getDataSources();
 		if (sources == null)
