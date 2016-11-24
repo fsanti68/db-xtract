@@ -26,7 +26,7 @@ import com.dsf.dbxtract.cdc.journal.JournalStrategy;
 
 /**
  * <p>
- * Sample handler:
+ * Sample window handler (no changes are made to journal tables):
  * </p>
  * <ul>
  * <li>journal: j$test</li>
@@ -56,12 +56,13 @@ public class TestWindowHandler implements JournalHandler {
 		return "SELECT * FROM TEST WHERE KEY1 = :key1 AND KEY2 = :key2";
 	}
 
+	/**
+	 * Publish imported data to... (kafka, a file, a queue, another database,
+	 * etc)
+	 */
 	public void publish(Data data) throws PublishException {
-		logger.info("Data to Publish (columns/rows): " + data.getColumnNames().length + "/" + data.getRows().size()
+		logger.info("(window strategy) Data to Publish (columns/rows): " + data.getColumnNames().length + "/" + data.getRows().size()
 				+ " rows");
-
-		// TODO: send data somewhere
-		System.out.println("[TestWindowHandler.publish] batch size = " + data.getRows().size());
 	}
 
 	@Override

@@ -16,6 +16,7 @@
 
 package com.dsf.dbxtract.cdc;
 
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,6 +27,8 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.zookeeper.CreateMode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -37,14 +40,20 @@ import org.testng.annotations.Test;
  */
 public class AppJournalDeleteTest {
 
+	private static final Logger logger = LogManager.getLogger(AppJournalDeleteTest.class.getName());
+
+	private int TEST_SIZE = 300;
+
 	@BeforeTest
 	public void setUp() throws Exception {
 
-		PropertyConfigurator
-				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
+		URL cfg = ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties");
+		PropertyConfigurator.configure(cfg);
+
+		logger.info("Testing Journal-based CDC with delete strategy");
 
 		Sources sources = new Sources();
-		sources.setInterval(1000L);
+		sources.setInterval(100L);
 		sources.getSources().add(new Source("test", "jdbc:mysql://localhost:3306/dbxtest?useSSL=false",
 				"org.gjt.mm.mysql.Driver", "root", "mysql",
 				Arrays.asList("com.dsf.dbxtract.cdc.sample.TestHandler", "com.dsf.dbxtract.cdc.sample.TestHandler")));
@@ -84,12 +93,12 @@ public class AppJournalDeleteTest {
 
 		// Carrega os dados de origem
 		PreparedStatement ps = conn.prepareStatement("insert into test (key1,key2,data) values (?,?,?)");
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < TEST_SIZE; i++) {
 			if ((i % 100) == 0) {
 				ps.executeBatch();
 			}
-			ps.setInt(1, 5000 + i);
-			ps.setInt(2, 6000 + i);
+			ps.setInt(1, i);
+			ps.setInt(2, i);
 			ps.setInt(3, (int) Math.random() * 500);
 			ps.addBatch();
 		}
@@ -101,19 +110,19 @@ public class AppJournalDeleteTest {
 
 		// Popula as tabelas de journal
 		ps = conn.prepareStatement("insert into j$test (key1,key2) values (?,?)");
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < TEST_SIZE; i++) {
 			if ((i % 500) == 0) {
 				ps.executeBatch();
 			}
-			ps.setInt(1, 5000 + i);
-			ps.setInt(2, 6000 + i);
+			ps.setInt(1, i);
+			ps.setInt(2, i);
 			ps.addBatch();
 		}
 		ps.executeBatch();
 		ps.close();
 
 		while (true) {
-			Thread.sleep(1000);
+			Thread.sleep(500);
 
 			ResultSet rs = conn.createStatement().executeQuery("select count(*) from j$test");
 			if (rs.next()) {

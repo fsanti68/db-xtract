@@ -31,6 +31,8 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException.NoNodeException;
@@ -48,7 +50,9 @@ import com.dsf.dbxtract.cdc.mon.Monitor;
  */
 public class AppJournalWindowTest {
 
-	private int TEST_SIZE = 1000;
+	private static final Logger logger = LogManager.getLogger(AppJournalWindowTest.class.getName());
+
+	private int TEST_SIZE = 300;
 
 	private Config config;
 	private CuratorFramework client;
@@ -56,8 +60,13 @@ public class AppJournalWindowTest {
 	@BeforeTest
 	public void setUp() throws Exception {
 
+		URL cfg = ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties");
+		PropertyConfigurator.configure(cfg);
+
+		logger.info("Testing Journal-based CDC with window strategy");
+
 		Sources sources = new Sources();
-		sources.setInterval(1000L);
+		sources.setInterval(100L);
 		sources.getSources()
 				.add(new Source("test", "jdbc:mysql://localhost:3306/dbxtest?useSSL=false", "org.gjt.mm.mysql.Driver",
 						"root", "mysql", Arrays.asList("com.dsf.dbxtract.cdc.sample.TestWindowHandler",
@@ -85,9 +94,6 @@ public class AppJournalWindowTest {
 
 		config = new Config(
 				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
-
-		PropertyConfigurator
-				.configure(ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 	}
 
 	/**
@@ -115,8 +121,8 @@ public class AppJournalWindowTest {
 			if ((i % 100) == 0) {
 				ps.executeBatch();
 			}
-			ps.setInt(1, 5000 + i);
-			ps.setInt(2, 6000 + i);
+			ps.setInt(1, i);
+			ps.setInt(2, i);
 			ps.setInt(3, (int) Math.random() * 500);
 			ps.addBatch();
 		}
@@ -129,8 +135,8 @@ public class AppJournalWindowTest {
 			if ((i % 500) == 0) {
 				ps.executeBatch();
 			}
-			ps.setInt(1, 5000 + i);
-			ps.setInt(2, 6000 + i);
+			ps.setInt(1, i);
+			ps.setInt(2, i);
 			ps.addBatch();
 		}
 		ps.executeBatch();

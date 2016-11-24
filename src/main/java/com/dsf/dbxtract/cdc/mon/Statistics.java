@@ -138,13 +138,5 @@ public class Statistics {
 			if (rows > 0)
 				this.lastRead = new Date();
 		}
-
-		public StatEntry clone() {
-			StatEntry e = new StatEntry(name);
-			e.lastRead = this.lastRead;
-			e.lastSeek = this.lastSeek;
-			e.readCount = this.readCount;
-			return e;
-		}
 	}
 }
