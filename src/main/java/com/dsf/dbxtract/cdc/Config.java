@@ -387,18 +387,17 @@ public class Config {
 			throws ConfigurationException {
 
 		Sources sources = getDataSources();
-		if (sources != null) {
-			for (Source source : sources.getSources()) {
-				if (source.getName().equals(name))
-					throw new ConfigurationException("A datasource named '" + name + "' already exists");
-			}
-			if (name == null || name.isEmpty())
-				throw new ConfigurationException("A name must be provided");
-			if (conn == null || conn.isEmpty())
-				throw new ConfigurationException("A connection string must be provided");
-
-		} else
+		if (sources == null)
 			sources = new Sources();
+
+		for (Source source : sources.getSources()) {
+			if (source.getName().equals(name))
+				throw new ConfigurationException("A datasource named '" + name + "' already exists");
+		}
+		if (name == null || name.isEmpty())
+			throw new ConfigurationException("A name must be provided");
+		if (conn == null || conn.isEmpty())
+			throw new ConfigurationException("A connection string must be provided");
 
 		sources.getSources().add(new Source(name, conn, driverClass, user, pwd, new ArrayList<String>()));
 		setDataSources(sources);

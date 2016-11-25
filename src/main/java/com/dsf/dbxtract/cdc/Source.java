@@ -62,10 +62,6 @@ public class Source {
 		this.handlers = handlers;
 	}
 
-	public Source() {
-
-	}
-
 	public String getName() {
 		return name;
 	}

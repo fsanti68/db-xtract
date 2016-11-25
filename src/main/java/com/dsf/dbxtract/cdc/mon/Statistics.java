@@ -20,7 +20,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import com.dsf.dbxtract.cdc.App;
 
 /**
- * Session store for basic Handler's statistics.
+ * CDC cluster-aware session store for basic Handler's statistics.
  * 
  * @author fabio de santi
  * @version 0.2
@@ -94,7 +94,8 @@ public class Statistics {
 	}
 
 	/**
-	 * Basic handler's statistics.
+	 * Basic handler's statistics. Those statistics are kept in the cluster
+	 * context -- that means all cluster's cdc agents are take in account.
 	 */
 	@XmlRootElement
 	@XmlAccessorType(XmlAccessType.PUBLIC_MEMBER)
@@ -113,29 +114,62 @@ public class Statistics {
 		@XmlElement
 		private long readCount = 0L;
 
+		/**
+		 * No parameters constructor, needed by json marshalling/unmarshaling.
+		 */
 		public StatEntry() {
 		}
 
+		/**
+		 * 
+		 * @param handler
+		 *            handler's name
+		 */
 		public StatEntry(String handler) {
 			this.name = handler;
 		}
 
+		/**
+		 * 
+		 * @return handler's assigned name
+		 */
 		public String getName() {
 			return name;
 		}
 
+		/**
+		 * This value is updated every time a successful capture occurs.
+		 * 
+		 * @return last capture timestamp
+		 */
 		public String getLastRead() {
 			return lastRead == null ? null : sdf.format(lastRead);
 		}
 
+		/**
+		 * This value is updated every time a capture to datasource is
+		 * performed.
+		 * 
+		 * @return last capture attempt timestamp
+		 */
 		public String getLastSeek() {
 			return lastSeek == null ? null : sdf.format(lastSeek);
 		}
 
+		/**
+		 * 
+		 * @return total rows imported in current session
+		 */
 		public long getReadCount() {
 			return readCount;
 		}
 
+		/**
+		 * Add imported rows count to handler's statistics.
+		 * 
+		 * @param rows
+		 *            number of rows captured
+		 */
 		protected void increment(int rows) {
 			this.lastSeek = new Date();
 			this.readCount += rows;

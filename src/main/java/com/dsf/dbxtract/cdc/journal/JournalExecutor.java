@@ -64,6 +64,7 @@ public class JournalExecutor implements Runnable {
 	private Source source;
 	private String agentName;
 	private String prefix;
+	private String LOGPREFIX;
 	private List<String> journalColumns = null;
 
 	/**
@@ -77,7 +78,8 @@ public class JournalExecutor implements Runnable {
 	 *            {@link Source}
 	 */
 	public JournalExecutor(String agentName, String zookeeper, JournalHandler handler, Source source) {
-		logger.info(agentName + " :: Creating executor for " + handler + " and " + source);
+		LOGPREFIX = agentName + " :: ";
+		logger.info(LOGPREFIX + "Creating executor for " + handler + " and " + source);
 		this.agentName = agentName;
 		this.zookeeper = zookeeper;
 		this.handler = handler;
@@ -144,7 +146,7 @@ public class JournalExecutor implements Runnable {
 		ResultSet rs = null;
 		try {
 			// Obtem os dados do journal
-			logger.debug(agentName + " :: getting journalized data");
+			logger.debug(LOGPREFIX + "getting journalized data");
 			StringBuilder baseQuery = new StringBuilder("select * from ").append(handler.getJournalTable());
 			if (JournalStrategy.WINDOW.equals(handler.getStrategy())) {
 				Long lastWindowId = getLastWindowId(client);
@@ -202,10 +204,10 @@ public class JournalExecutor implements Runnable {
 			throws SQLException, IOException, PublishException {
 
 		if (rows.isEmpty()) {
-			logger.debug(agentName + " :: nothing to load");
+			logger.debug(LOGPREFIX + "nothing to load");
 			return;
 		}
-		logger.debug(agentName + " :: getting data");
+		logger.debug(LOGPREFIX + "getting data");
 		String query = handler.getTargetQuery();
 		NamedParameterStatement ps = null;
 		ResultSet rs = null;
@@ -281,10 +283,10 @@ public class JournalExecutor implements Runnable {
 	private void deleteFromJournal(Connection conn, List<Map<String, Object>> rows) throws SQLException {
 
 		if (rows.isEmpty()) {
-			logger.debug(agentName + " :: nothing to clean");
+			logger.debug(LOGPREFIX + "nothing to clean");
 			return;
 		}
-		logger.debug("cleaning journal " + handler.getJournalTable());
+		logger.debug(LOGPREFIX + "cleaning journal " + handler.getJournalTable());
 		StringBuilder sb = new StringBuilder("delete from " + handler.getJournalTable() + " where ");
 		for (int i = 0; i < journalColumns.size(); i++) {
 			sb.append(i > 0 ? " and " : "").append(journalColumns.get(i)).append("=?");
@@ -299,7 +301,7 @@ public class JournalExecutor implements Runnable {
 				ps.addBatch();
 			}
 			ps.executeBatch();
-			logger.info(agentName + " :: " + rows.size() + " rows removed (" + handler.getJournalTable() + ")");
+			logger.info(LOGPREFIX + rows.size() + " rows removed (" + handler.getJournalTable() + ")");
 
 		} finally {
 			DBUtils.close(ps);
@@ -357,40 +359,48 @@ public class JournalExecutor implements Runnable {
 		Connection conn = null;
 		String lockPath = getPrefix() + "/lock";
 		InterProcessMutex lock = new InterProcessMutex(client, lockPath);
-		logger.debug(agentName + " :: waiting lock from " + zookeeper + lockPath);
+		logger.debug(LOGPREFIX + "waiting lock from " + zookeeper + lockPath);
+		boolean lockAcquired = false;
 		try {
 			if (lock.acquire(5, TimeUnit.SECONDS)) {
-				try {
-					logger.debug(agentName + " :: get database connection");
-					conn = getConnection();
+				lockAcquired = true;
 
-					// Get journal data
-					List<Map<String, Object>> rows = getJournalKeys(client, conn);
+				logger.debug(LOGPREFIX + "get database connection");
+				conn = getConnection();
 
-					// Retrieve changed data and publish it
-					selectAndPublish(conn, rows);
+				// Get journal data
+				List<Map<String, Object>> rows = getJournalKeys(client, conn);
 
-					if (JournalStrategy.WINDOW.equals(handler.getStrategy())) {
-						// Update last loaded window_id
-						markLastLoaded(client, rows);
+				// Retrieve changed data and publish it
+				selectAndPublish(conn, rows);
 
-					} else {
-						// Remove from journal imported & published data
-						deleteFromJournal(conn, rows);
-					}
+				if (JournalStrategy.WINDOW.equals(handler.getStrategy())) {
+					// Update last loaded window_id
+					markLastLoaded(client, rows);
 
-					statistics.update(client, handler.getClass().getName(), rows.size());
-
-				} finally {
-					DBUtils.close(conn);
-					logger.debug(agentName + " :: lock release");
-					lock.release();
-					client.close();
+				} else {
+					// Remove from journal imported & published data
+					deleteFromJournal(conn, rows);
 				}
+
+				statistics.update(client, handler.getClass().getName(), rows.size());
+
 			}
 
 		} catch (Exception e) {
 			logger.error(agentName + " :: failure", e);
+
+		} finally {
+			DBUtils.close(conn);
+			if (lockAcquired) {
+				logger.debug(agentName + " :: lock release");
+				try {
+					lock.release();
+				} catch (Exception e) {
+					logger.warn(LOGPREFIX + "failed to release zk lock for ", e);
+				}
+			}
+			client.close();
 		}
 	}
 }

@@ -17,6 +17,15 @@ public class Monitor {
 	protected int serverPort = 8080;
 	private HttpServer server = null;
 
+	/**
+	 * Start's monitor lister
+	 * 
+	 * @param port
+	 *            HTTP port to listen (default: 8080)
+	 * @param config
+	 *            {@link Config} object
+	 * @throws IOException
+	 */
 	public Monitor(int port, Config config) throws IOException {
 		serverPort = port;
 
@@ -25,7 +34,10 @@ public class Monitor {
 		server.setExecutor(null);
 		server.start();
 	}
-	
+
+	/**
+	 * Shutdown the monitor listener.
+	 */
 	public void stop() {
 		if (server != null)
 			server.stop(0);

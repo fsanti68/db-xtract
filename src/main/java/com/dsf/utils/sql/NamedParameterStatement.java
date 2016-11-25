@@ -90,12 +90,7 @@ public class NamedParameterStatement {
 					c = '?'; // replace the parameter with a question mark
 					i += name.length(); // skip past the end if the parameter
 
-					List indexList = (List) paramMap.get(name);
-					if (indexList == null) {
-						indexList = new LinkedList();
-						paramMap.put(name, indexList);
-					}
-					indexList.add(new Integer(index));
+					getListItemFromMap(paramMap, name).add(new Integer(index));
 
 					index++;
 				}
@@ -117,6 +112,16 @@ public class NamedParameterStatement {
 		}
 
 		return parsedQuery.toString();
+	}
+
+	private static List getListItemFromMap(Map paramMap, String name) {
+
+		List indexList = (List) paramMap.get(name);
+		if (indexList == null) {
+			indexList = new LinkedList();
+			paramMap.put(name, indexList);
+		}
+		return indexList;
 	}
 
 	/**

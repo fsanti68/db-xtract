@@ -46,6 +46,19 @@ public class SimpleJournalHandler implements JournalHandler {
 	 */
 	public SimpleJournalHandler(String journalTable, String query, int batchSize, Publisher publisher,
 			JournalStrategy strategy) throws ConfigurationException {
+		
+		validateParameters(journalTable, query, batchSize, publisher, strategy);
+		
+		this.journal = journalTable;
+		this.query = query;
+		this.batchSize = batchSize;
+		this.publisher = publisher;
+		this.strategy = strategy == null ? JournalStrategy.WINDOW : strategy;
+	}
+
+	private static void validateParameters(String journalTable, String query, int batchSize, Publisher publisher,
+			JournalStrategy strategy) throws ConfigurationException {
+
 		if (journalTable == null || journalTable.isEmpty())
 			throw new ConfigurationException("journal table name is required");
 		if (query == null || query.isEmpty())
@@ -54,11 +67,6 @@ public class SimpleJournalHandler implements JournalHandler {
 			throw new ConfigurationException("batch size must be a positive integer");
 		if (publisher == null)
 			throw new ConfigurationException("published is required");
-		this.journal = journalTable;
-		this.query = query;
-		this.batchSize = batchSize;
-		this.publisher = publisher;
-		this.strategy = strategy == null ? JournalStrategy.WINDOW : strategy;
 	}
 
 	/**

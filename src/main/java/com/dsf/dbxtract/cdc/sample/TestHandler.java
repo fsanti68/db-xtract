@@ -59,6 +59,8 @@ public class TestHandler implements JournalHandler {
 	/**
 	 * Publish imported data to... (kafka, a file, a queue, another database,
 	 * etc)
+	 * 
+	 * @param data
 	 */
 	public void publish(Data data) throws PublishException {
 		logger.info("(delete strategy) Data to Publish (columns/rows): " + data.getColumnNames().length + "/" + data.getRows().size()
