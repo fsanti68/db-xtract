@@ -15,6 +15,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.dsf.dbxtract.cdc.App;
@@ -82,7 +83,12 @@ public class Statistics {
 				client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
 
 			byte[] d = client.getData().forPath(path);
-			StatEntry entry = mapper.readValue(d, StatEntry.class);
+			StatEntry entry = null;
+			try {
+				entry = mapper.readValue(d, StatEntry.class);
+			} catch (JsonMappingException e) {
+				logger.warn("invalid json at " + path, e);
+			}
 			if (entry == null)
 				entry = new StatEntry(handler);
 			return entry;
