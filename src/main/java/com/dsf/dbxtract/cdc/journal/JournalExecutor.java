@@ -64,7 +64,7 @@ public class JournalExecutor implements Runnable {
 	private Source source;
 	private String agentName;
 	private String prefix;
-	private String LOGPREFIX;
+	private String logPrefix;
 	private List<String> journalColumns = null;
 
 	/**
@@ -78,8 +78,8 @@ public class JournalExecutor implements Runnable {
 	 *            {@link Source}
 	 */
 	public JournalExecutor(String agentName, String zookeeper, JournalHandler handler, Source source) {
-		LOGPREFIX = agentName + " :: ";
-		logger.info(LOGPREFIX + "Creating executor for " + handler + " and " + source);
+		logPrefix = agentName + " :: ";
+		logger.info(logPrefix + "Creating executor for " + handler + " and " + source);
 		this.agentName = agentName;
 		this.zookeeper = zookeeper;
 		this.handler = handler;
@@ -146,7 +146,7 @@ public class JournalExecutor implements Runnable {
 		ResultSet rs = null;
 		try {
 			// Obtem os dados do journal
-			logger.debug(LOGPREFIX + "getting journalized data");
+			logger.debug(logPrefix + "getting journalized data");
 			StringBuilder baseQuery = new StringBuilder("select * from ").append(handler.getJournalTable());
 			if (JournalStrategy.WINDOW.equals(handler.getStrategy())) {
 				Long lastWindowId = getLastWindowId(client);
@@ -204,10 +204,10 @@ public class JournalExecutor implements Runnable {
 			throws SQLException, IOException, PublishException {
 
 		if (rows.isEmpty()) {
-			logger.debug(LOGPREFIX + "nothing to load");
+			logger.debug(logPrefix + "nothing to load");
 			return;
 		}
-		logger.debug(LOGPREFIX + "getting data");
+		logger.debug(logPrefix + "getting data");
 		String query = handler.getTargetQuery();
 		NamedParameterStatement ps = null;
 		ResultSet rs = null;
@@ -283,10 +283,10 @@ public class JournalExecutor implements Runnable {
 	private void deleteFromJournal(Connection conn, List<Map<String, Object>> rows) throws SQLException {
 
 		if (rows.isEmpty()) {
-			logger.debug(LOGPREFIX + "nothing to clean");
+			logger.debug(logPrefix + "nothing to clean");
 			return;
 		}
-		logger.debug(LOGPREFIX + "cleaning journal " + handler.getJournalTable());
+		logger.debug(logPrefix + "cleaning journal " + handler.getJournalTable());
 		StringBuilder sb = new StringBuilder("delete from " + handler.getJournalTable() + " where ");
 		for (int i = 0; i < journalColumns.size(); i++) {
 			sb.append(i > 0 ? " and " : "").append(journalColumns.get(i)).append("=?");
@@ -301,7 +301,7 @@ public class JournalExecutor implements Runnable {
 				ps.addBatch();
 			}
 			ps.executeBatch();
-			logger.info(LOGPREFIX + rows.size() + " rows removed (" + handler.getJournalTable() + ")");
+			logger.info(logPrefix + rows.size() + " rows removed (" + handler.getJournalTable() + ")");
 
 		} finally {
 			DBUtils.close(ps);
@@ -359,13 +359,13 @@ public class JournalExecutor implements Runnable {
 		Connection conn = null;
 		String lockPath = getPrefix() + "/lock";
 		InterProcessMutex lock = new InterProcessMutex(client, lockPath);
-		logger.debug(LOGPREFIX + "waiting lock from " + zookeeper + lockPath);
+		logger.debug(logPrefix + "waiting lock from " + zookeeper + lockPath);
 		boolean lockAcquired = false;
 		try {
 			if (lock.acquire(5, TimeUnit.SECONDS)) {
 				lockAcquired = true;
 
-				logger.debug(LOGPREFIX + "get database connection");
+				logger.debug(logPrefix + "get database connection");
 				conn = getConnection();
 
 				// Get journal data
@@ -397,7 +397,7 @@ public class JournalExecutor implements Runnable {
 				try {
 					lock.release();
 				} catch (Exception e) {
-					logger.warn(LOGPREFIX + "failed to release zk lock for ", e);
+					logger.warn(logPrefix + "failed to release zk lock for ", e);
 				}
 			}
 			client.close();

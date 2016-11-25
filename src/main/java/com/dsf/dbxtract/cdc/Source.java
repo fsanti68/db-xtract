@@ -62,6 +62,13 @@ public class Source {
 		this.handlers = handlers;
 	}
 
+	/**
+	 * Default constructor, required by json mapping.
+	 */
+	public Source() {
+
+	}
+
 	public String getName() {
 		return name;
 	}

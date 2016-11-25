@@ -46,9 +46,9 @@ public class SimpleJournalHandler implements JournalHandler {
 	 */
 	public SimpleJournalHandler(String journalTable, String query, int batchSize, Publisher publisher,
 			JournalStrategy strategy) throws ConfigurationException {
-		
-		validateParameters(journalTable, query, batchSize, publisher, strategy);
-		
+
+		validateParameters(journalTable, query, batchSize, publisher);
+
 		this.journal = journalTable;
 		this.query = query;
 		this.batchSize = batchSize;
@@ -56,8 +56,8 @@ public class SimpleJournalHandler implements JournalHandler {
 		this.strategy = strategy == null ? JournalStrategy.WINDOW : strategy;
 	}
 
-	private static void validateParameters(String journalTable, String query, int batchSize, Publisher publisher,
-			JournalStrategy strategy) throws ConfigurationException {
+	private static void validateParameters(String journalTable, String query, int batchSize, Publisher publisher)
+			throws ConfigurationException {
 
 		if (journalTable == null || journalTable.isEmpty())
 			throw new ConfigurationException("journal table name is required");
