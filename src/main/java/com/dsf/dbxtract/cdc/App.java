@@ -216,7 +216,7 @@ public class App {
 			config.report();
 
 			// Starts monitor server
-			new Monitor(monitorPort, config);
+			new Monitor(monitorPort, config).start();
 
 			// Starts service
 			App app = new App(config);

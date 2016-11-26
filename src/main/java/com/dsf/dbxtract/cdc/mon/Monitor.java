@@ -1,10 +1,13 @@
 package com.dsf.dbxtract.cdc.mon;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.dsf.dbxtract.cdc.Config;
-import com.sun.net.httpserver.HttpServer;
+
+import fi.iki.elonen.NanoHTTPD;
 
 /**
  * Set's up a HTTP listener for statistics and administration tasks.
@@ -12,10 +15,11 @@ import com.sun.net.httpserver.HttpServer;
  * @author fabio de santi
  * @version 0.2
  */
-public class Monitor {
+public class Monitor extends NanoHTTPD {
 
-	protected int serverPort = 8080;
-	private HttpServer server = null;
+	private static final Logger logger = LogManager.getLogger(Monitor.class.getName());
+
+	private Config config;
 
 	/**
 	 * Start's monitor lister
@@ -27,19 +31,24 @@ public class Monitor {
 	 * @throws IOException
 	 */
 	public Monitor(int port, Config config) throws IOException {
-		serverPort = port;
-
-		server = HttpServer.create(new InetSocketAddress(port), 0);
-		server.createContext("/info", new InfoHandler(config));
-		server.setExecutor(null);
-		server.start();
+		super(port);
+		this.config = config;
+		logger.info("Started monitor at port " + port);
 	}
 
 	/**
 	 * Shutdown the monitor listener.
 	 */
 	public void stop() {
-		if (server != null)
-			server.stop(0);
+		super.stop();
+	}
+
+	@Override
+	public Response serve(IHTTPSession session) {
+		Method method = session.getMethod();
+		String uri = session.getUri();
+		logger.info(method + " " + uri);
+
+		return new InfoHandler(config).serve(session);
 	}
 }

@@ -156,7 +156,7 @@ public class AppJournalWindowTest {
 			client.delete().forPath(zkKey);
 
 		// starts monitor
-		new Monitor(9123, config);
+		new Monitor(9123, config).start();
 
 		// start app
 		App app = new App(config);

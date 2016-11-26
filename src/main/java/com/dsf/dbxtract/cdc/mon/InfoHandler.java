@@ -1,8 +1,5 @@
 package com.dsf.dbxtract.cdc.mon;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.HashMap;
@@ -24,8 +21,10 @@ import org.codehaus.jackson.map.ObjectMapper;
 import com.dsf.dbxtract.cdc.Config;
 import com.dsf.dbxtract.cdc.ConfigurationException;
 import com.dsf.dbxtract.cdc.mon.Statistics.StatEntry;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
+
+import fi.iki.elonen.NanoHTTPD;
+import fi.iki.elonen.NanoHTTPD.IHTTPSession;
+import fi.iki.elonen.NanoHTTPD.Response;
 
 /**
  * Provides basic statistics from CDC Handlers, like last run time, last capture
@@ -34,7 +33,7 @@ import com.sun.net.httpserver.HttpHandler;
  * @author fabio de santi
  * @version 0.2
  */
-class InfoHandler implements HttpHandler {
+public class InfoHandler {
 
 	private static Logger logger = LogManager.getLogger(InfoHandler.class.getName());
 	private ObjectMapper mapper = null;
@@ -44,34 +43,21 @@ class InfoHandler implements HttpHandler {
 		this.config = config;
 	}
 
-	@Override
-	public void handle(HttpExchange t) {
+	public Response serve(IHTTPSession session) {
 
 		try {
-			String body = getRequestBody(t);
-			if (body != null && !body.isEmpty())
-				logger.debug("Request: " + body);
-			String response = getInfo();
-			t.sendResponseHeaders(200, response.length());
-			OutputStream os = t.getResponseBody();
-			os.write(response.getBytes());
-			os.close();
+			Map<String, List<String>> parms = session.getParameters();
+			if (logger.isDebugEnabled()) {
+				for (Map.Entry<String, List<String>> entry : parms.entrySet()) {
+					logger.debug(entry.getKey() + "=" + entry.getValue().toString());
+				}
+			}
+			return NanoHTTPD.newFixedLengthResponse(getInfo());
 
 		} catch (Exception e) {
 			logger.error("[/info] error", e);
+			return NanoHTTPD.newFixedLengthResponse("/info error: " + e.getMessage());
 		}
-	}
-
-	private String getRequestBody(HttpExchange t) throws IOException {
-
-		InputStreamReader is = new InputStreamReader(t.getRequestBody());
-		StringBuilder sb = new StringBuilder();
-		char[] b = new char[1024];
-		int len;
-		while ((len = is.read(b)) > 0)
-			sb.append(b, 0, len);
-		is.close();
-		return sb.toString();
 	}
 
 	private String getInfo() throws ConfigurationException {
