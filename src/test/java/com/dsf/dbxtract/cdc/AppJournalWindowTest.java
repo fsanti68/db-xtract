@@ -220,8 +220,10 @@ public class AppJournalWindowTest {
 	public void tearDown() throws Exception {
 
 		client.close();
-		if (monitor != null)
+		if (monitor != null) {
+			monitor.closeAllConnections();
 			monitor.stop();
+		}
 		if (app != null)
 			app.stop();
 	}

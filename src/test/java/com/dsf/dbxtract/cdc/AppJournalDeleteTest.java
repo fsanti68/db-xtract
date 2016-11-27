@@ -32,9 +32,12 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.zookeeper.CreateMode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.testng.Assert;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+
+import com.dsf.dbxtract.cdc.journal.JournalStrategy;
 
 /**
  * Unit test for simple App.
@@ -109,6 +112,8 @@ public class AppJournalDeleteTest {
 
 		app = new App(config);
 		app.start();
+
+		Assert.assertEquals(config.getHandlers().iterator().next().getStrategy(), JournalStrategy.DELETE);
 
 		// Popula as tabelas de journal
 		ps = conn.prepareStatement("insert into j$test (key1,key2) values (?,?)");
