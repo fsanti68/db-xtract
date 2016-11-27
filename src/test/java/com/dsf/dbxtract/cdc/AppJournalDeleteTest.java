@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.zookeeper.CreateMode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -43,6 +44,7 @@ public class AppJournalDeleteTest {
 	private static final Logger logger = LogManager.getLogger(AppJournalDeleteTest.class.getName());
 
 	private int TEST_SIZE = 300;
+	private App app;
 
 	@BeforeTest
 	public void setUp() throws Exception {
@@ -105,7 +107,7 @@ public class AppJournalDeleteTest {
 		ps.executeBatch();
 		ps.close();
 
-		App app = new App(config);
+		app = new App(config);
 		app.start();
 
 		// Popula as tabelas de journal
@@ -135,5 +137,11 @@ public class AppJournalDeleteTest {
 		}
 		conn.close();
 		ds.close();
+	}
+
+	@AfterTest
+	public void tearDown() {
+		if (app != null)
+			app.stop();
 	}
 }

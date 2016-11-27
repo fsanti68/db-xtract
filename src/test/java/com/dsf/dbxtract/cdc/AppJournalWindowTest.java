@@ -56,6 +56,8 @@ public class AppJournalWindowTest {
 
 	private Config config;
 	private CuratorFramework client;
+	private Monitor monitor;
+	private App app;
 
 	@BeforeTest
 	public void setUp() throws Exception {
@@ -156,10 +158,11 @@ public class AppJournalWindowTest {
 			client.delete().forPath(zkKey);
 
 		// starts monitor
-		new Monitor(9123, config).start();
+		monitor = new Monitor(9123, config);
+		monitor.start();
 
 		// start app
-		App app = new App(config);
+		app = new App(config);
 		System.out.println(config.toString());
 		app.start();
 
@@ -217,5 +220,9 @@ public class AppJournalWindowTest {
 	public void tearDown() throws Exception {
 
 		client.close();
+		if (monitor != null)
+			monitor.stop();
+		if (app != null)
+			app.stop();
 	}
 }
