@@ -175,6 +175,7 @@ public class AppJournalWindowTest {
 				Long lastWindowId = Long.parseLong(new String(client.getData().forPath(zkKey)));
 				System.out.println("lastWindowId = " + lastWindowId);
 				if (maxWindowId.longValue() == lastWindowId.longValue()) {
+					System.out.println("expected window_id reached");
 					break;
 				}
 

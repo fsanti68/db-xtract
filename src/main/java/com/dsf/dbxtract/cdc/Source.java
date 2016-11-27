@@ -66,7 +66,7 @@ public class Source {
 	 * Default constructor, required by json mapping.
 	 */
 	public Source() {
-
+		// empty constructor is required by json mapping.
 	}
 
 	public String getName() {
