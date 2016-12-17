@@ -66,8 +66,9 @@ public class NamedParameterStatement {
 		boolean inDoubleQuote = false;
 		int index = 1;
 
-		for (int i = 0; i < length; i++) {
-			char c = query.charAt(i);
+		int k = 0;
+		while (k < length) {
+			char c = query.charAt(k);
 			if (inSingleQuote) {
 				if (c == '\'') {
 					inSingleQuote = false;
@@ -81,14 +82,14 @@ public class NamedParameterStatement {
 					inSingleQuote = true;
 				} else if (c == '"') {
 					inDoubleQuote = true;
-				} else if (c == ':' && i + 1 < length && Character.isJavaIdentifierStart(query.charAt(i + 1))) {
-					int j = i + 2;
+				} else if (c == ':' && k + 1 < length && Character.isJavaIdentifierStart(query.charAt(k + 1))) {
+					int j = k + 2;
 					while (j < length && Character.isJavaIdentifierPart(query.charAt(j))) {
 						j++;
 					}
-					String name = query.substring(i + 1, j);
+					String name = query.substring(k + 1, j);
 					c = '?'; // replace the parameter with a question mark
-					i += name.length(); // skip past the end if the parameter
+					k += name.length(); // skip past the end if the parameter
 
 					getListItemFromMap(paramMap, name).add(new Integer(index));
 
@@ -96,6 +97,7 @@ public class NamedParameterStatement {
 				}
 			}
 			parsedQuery.append(c);
+			k++;
 		}
 
 		// replace the lists of Integer objects with arrays of ints
