@@ -87,18 +87,15 @@ public class Statistics {
 			if (d != null && d.length > 0 && d[0] == '{')
 				entry = mapper.readValue(d, StatEntry.class);
 
-			if (entry == null)
-				entry = new StatEntry(handler);
-			return entry;
+			return entry == null ? new StatEntry(handler) : entry;
 
 		} catch (JsonMappingException e) {
 			logger.warn("invalid json at " + path, e);
-			return new StatEntry(handler);
 
 		} catch (Exception e) {
 			logger.error("Failed to obtain " + path, e);
-			return new StatEntry(handler);
 		}
+		return new StatEntry(handler);
 	}
 
 	/**

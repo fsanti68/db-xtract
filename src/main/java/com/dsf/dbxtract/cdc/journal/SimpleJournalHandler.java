@@ -91,6 +91,8 @@ public class SimpleJournalHandler implements JournalHandler {
 	}
 
 	/**
+	 * @param data
+	 *            retrieved data (see {@link Data}})
 	 * @return publish imported data to registered publisher (see
 	 *         {@link SimpleJournalHandler}).
 	 */
