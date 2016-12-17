@@ -74,7 +74,7 @@ Check your configuration...
 
 ## Running the tests
 
-All tests are provided as JUnit test cases. Before starting tests, be sure that mysql (or your preferred database) and ZooKeeper are ready, running and configured in app's property file (<code>src/test/java/com/dsf/dbxtract/cdc/config-app-journal.properties</code>).
+All tests are provided as JUnit test cases. Before starting tests, be sure that mysql (or your preferred database) and ZooKeeper are ready, running and configured in app's property files (<code>src/test/java/com/dsf/dbxtract/cdc/config-app-journal-*.properties</code>).
 
 	mvn test
 	
