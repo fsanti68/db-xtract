@@ -23,7 +23,6 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -34,12 +33,9 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException.NoNodeException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.testng.Assert;
 import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import com.dsf.dbxtract.cdc.journal.JournalStrategy;
@@ -48,43 +44,29 @@ import com.dsf.dbxtract.cdc.mon.Monitor;
 /**
  * Unit test for simple App.
  */
+@Test(singleThreaded = true)
 public class AppJournalWindowTest {
 
 	private static final Logger logger = LogManager.getLogger(AppJournalWindowTest.class.getName());
 
 	private int TEST_SIZE = 300;
 
-	private Config config;
 	private CuratorFramework client;
 	private Monitor monitor;
 	private App app;
 
-	@BeforeTest
+	@Test
 	public void setUp() throws Exception {
 
-		URL cfg = ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal.properties");
+		URL cfg = ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal-window.properties");
 		PropertyConfigurator.configure(cfg);
 
 		logger.info("Testing Journal-based CDC with window strategy");
-
-		Sources sources = new Sources();
-		sources.setInterval(100L);
-		sources.getSources()
-				.add(new Source("test", "jdbc:mysql://localhost:3306/dbxtest?useSSL=false", "org.gjt.mm.mysql.Driver",
-						"root", "mysql", Arrays.asList("com.dsf.dbxtract.cdc.sample.TestWindowHandler",
-								"com.dsf.dbxtract.cdc.sample.TestWindowHandler")));
 
 		// Add configuration to zk
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 		client = CuratorFrameworkFactory.newClient("localhost:2181", retryPolicy);
 		client.start();
-
-		ObjectMapper mapper = new ObjectMapper();
-		byte[] value = mapper.writeValueAsBytes(sources);
-		if (client.checkExists().forPath(App.BASEPREFIX + "/config") == null)
-			client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
-					.forPath(App.BASEPREFIX + "/config");
-		client.setData().forPath(App.BASEPREFIX + "/config", value);
 
 		// Clean previous statistics and states
 		if (client.checkExists().forPath("/dbxtract/cdc/statistics") != null) {
@@ -93,16 +75,16 @@ public class AppJournalWindowTest {
 				client.delete().forPath("/dbxtract/cdc/statistics/" + k);
 			client.delete().forPath("/dbxtract/cdc/statistics");
 		}
-
-		config = new Config(
-				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal.properties"));
 	}
 
 	/**
 	 * Rigourous Test :-)
 	 */
-	@Test
+	@Test(dependsOnMethods = "setUp")
 	public void testAppWithJournalWindow() throws Exception {
+
+		final Config config = new Config(
+				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-window.properties"));
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().getSources().get(0);

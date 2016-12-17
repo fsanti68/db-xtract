@@ -30,16 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.curator.RetryPolicy;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.CreateMode;
-import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
@@ -47,19 +40,16 @@ import com.dsf.dbxtract.cdc.journal.JournalHandler;
 /**
  * 
  * @author fabio de santi
- * @version 0.3
+ * @version 0.4
  */
 public class Config {
 
 	private static final Logger logger = LogManager.getLogger(Config.class.getName());
 
-	private static final String CONFIGPATH = "/config";
-
-	private RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-
 	private Properties props;
 	private String agentName = null;
 	private Map<JournalHandler, Source> handlerMap = null;
+	private Sources sources = null;
 
 	/**
 	 * Loads configuration file.
@@ -103,29 +93,6 @@ public class Config {
 	}
 
 	/**
-	 * Check zookeeper connection & config availability
-	 * 
-	 * @throws ConfigurationException
-	 */
-	private void checkZooKeeper() throws ConfigurationException {
-
-		CuratorFramework client = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
-		client.start();
-
-		String path = App.BASEPREFIX + CONFIGPATH;
-		try {
-			if (client.checkExists().forPath(path) == null)
-				client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
-
-		} catch (Exception e) {
-			throw new ConfigurationException("Failed to access zk entry " + path, e);
-
-		} finally {
-			client.close();
-		}
-	}
-
-	/**
 	 * Get configuration as a stream
 	 * 
 	 * @param stream
@@ -142,15 +109,12 @@ public class Config {
 		}
 		this.props = p;
 
-		// check if zk is ok
-		checkZooKeeper();
-
 		// Prepare a handler's list and respective data sources
 		handlerMap = new HashMap<JournalHandler, Source>();
-		Sources sources = getDataSources();
-		if (sources != null) {
+		Sources srcs = getDataSources();
+		if (srcs != null) {
 			List<String> affinity = getAffinity();
-			for (Source source : sources.getSources()) {
+			for (Source source : srcs.getSources()) {
 				if (affinity.isEmpty() || affinity.contains(source.getName())) {
 					addHandlerToMap(source);
 
@@ -182,27 +146,9 @@ public class Config {
 		}
 	}
 
-	private byte[] getZkData(String path) throws ConfigurationException {
-
-		CuratorFramework zk = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
-		zk.start();
-		try {
-			if (zk.checkExists().forPath(path) == null)
-				throw new ConfigurationException("No configuration found (zk) at " + path);
-			return zk.getData().forPath(path);
-
-		} catch (Exception e) {
-			throw new ConfigurationException("failed to retrieve zk entry at " + path, e);
-
-		} finally {
-			zk.close();
-		}
-	}
-
 	/**
 	 * Data sources are a list of database connections and its associated
-	 * handler's class names. Data sources are kept in ZooKeeper, under the
-	 * <i>config</i> entry.
+	 * handler's class names.
 	 * 
 	 * @return data sources list
 	 * @throws IOException
@@ -211,49 +157,42 @@ public class Config {
 	 */
 	public Sources getDataSources() throws ConfigurationException {
 
-		String path = App.BASEPREFIX + CONFIGPATH;
+		if (sources == null) {
+			String srcs = props.getProperty("sources");
+			if (srcs == null)
+				throw new ConfigurationException("Required configuration entry missed: 'sources'");
 
-		byte[] json = getZkData(path);
-		if (json == null || json.length == 0)
-			return null;
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			return mapper.readValue(json, Sources.class);
+			sources = new Sources();
+			for (String srcname : srcs.split(",")) {
+				sources.getSources().add(getDataSource(srcname));
+			}
 
-		} catch (JsonMappingException jme) {
-			logger.error("Invalid config data on " + path, jme);
-			return null;
+			String intrvl = props.getProperty("interval");
+			if (intrvl == null || intrvl.isEmpty())
+				throw new ConfigurationException("Required configuration entry missed: 'interval'");
 
-		} catch (Exception e) {
-			throw new ConfigurationException("Failed to access zk entry", e);
+			sources.setInterval(Long.parseLong(intrvl));
 		}
+		return sources;
 	}
 
-	/**
-	 * 
-	 * @param sources
-	 * @throws ConfigurationException
-	 * @throws IOException
-	 * @throws JsonMappingException
-	 * @throws JsonGenerationException
-	 * @throws Exception
-	 */
-	private void setDataSources(Sources sources) throws ConfigurationException {
+	private Source getDataSource(String srcname) throws ConfigurationException {
 
-		String path = App.BASEPREFIX + CONFIGPATH;
-		CuratorFramework zk = CuratorFrameworkFactory.newClient(getZooKeeper(), retryPolicy);
-		zk.start();
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			byte[] data = mapper.writeValueAsBytes(sources);
-			zk.setData().forPath(path, data);
+		if (srcname == null || srcname.isEmpty())
+			throw new ConfigurationException("source name cannot be empty or null");
 
-		} catch (Exception e) {
-			throw new ConfigurationException("Failed to save zk entry " + path, e);
+		String key = "source." + srcname.trim() + ".";
+		Source source = new Source(srcname, props.getProperty(key + "connection"), props.getProperty(key + "driver"),
+				props.getProperty(key + "user"), props.getProperty(key + "password"), null);
+		String handlers = props.getProperty(key + "handlers");
+		if (handlers == null || handlers.isEmpty())
+			throw new ConfigurationException("Required configuration entry missed: '" + key + handlers + "'");
 
-		} finally {
-			zk.close();
+		for (String handler : handlers.split(",")) {
+			source.getHandlers().add(handler.trim());
 		}
+
+		return source;
 	}
 
 	/**
@@ -363,189 +302,6 @@ public class Config {
 			logger.warn("[Zookeeper address ]", e);
 		}
 		logger.info("[Thread pool size  ] " + getThreadPoolSize());
-	}
-
-	/**
-	 * Add a new datasource
-	 * 
-	 * @param name
-	 *            source name
-	 * @param conn
-	 *            database connection string
-	 * @param driverClass
-	 *            jdbc driver class name
-	 * @param user
-	 *            username
-	 * @param pwd
-	 *            password
-	 * @throws IOException
-	 * @throws ConfigurationException
-	 * @throws JsonParseException
-	 * @throws Exception
-	 */
-	public void datasourceAdd(String name, String conn, String driverClass, String user, String pwd)
-			throws ConfigurationException {
-
-		Sources sources = getDataSources();
-		if (sources == null)
-			sources = new Sources();
-
-		for (Source source : sources.getSources()) {
-			if (source.getName().equals(name))
-				throw new ConfigurationException("A datasource named '" + name + "' already exists");
-		}
-		if (name == null || name.isEmpty())
-			throw new ConfigurationException("A name must be provided");
-		if (conn == null || conn.isEmpty())
-			throw new ConfigurationException("A connection string must be provided");
-
-		sources.getSources().add(new Source(name, conn, driverClass, user, pwd, new ArrayList<String>()));
-		setDataSources(sources);
-		logger.info(name + ": datasource registered successfully");
-	}
-
-	/**
-	 * Remove an existing datasource
-	 * 
-	 * @param sourceName
-	 *            datasource name
-	 * @throws IOException
-	 * @throws JsonParseException
-	 * @throws Exception
-	 */
-	public void datasourceDelete(String sourceName) throws ConfigurationException {
-
-		Sources sources = getDataSources();
-		if (sources != null) {
-			for (Source source : sources.getSources()) {
-				if (source.getName().equals(sourceName)) {
-					sources.getSources().remove(source);
-					setDataSources(sources);
-					logger.info(sourceName + ": datasource removed");
-					return;
-				}
-			}
-			throw new ConfigurationException(sourceName + ": datasource not found!");
-
-		} else
-			throw new ConfigurationException("No datasources defined");
-	}
-
-	/**
-	 * Sets the datasource scan interval.
-	 * 
-	 * @param interval
-	 *            scan interval in milliseconds.
-	 * @throws ConfigurationException
-	 * @throws Exception
-	 */
-	public void datasourceInterval(String interval) throws ConfigurationException {
-
-		Sources sources = getDataSources();
-		if (sources == null)
-			sources = new Sources();
-		long val = 5000L;
-		try {
-			val = Long.parseLong(interval);
-			if (val <= 0)
-				throw new NumberFormatException();
-
-		} catch (NumberFormatException nfe) {
-			throw new NumberFormatException("Invalid interval: must be an integer positive number");
-		}
-		sources.setInterval(val);
-		setDataSources(sources);
-		logger.info("Execution cycle interval set to " + val);
-	}
-
-	/**
-	 * Add a new handler to a datasource
-	 * 
-	 * @param sourceName
-	 *            datasource name
-	 * @param handlerClass
-	 *            handler class name
-	 * @throws IOException
-	 * @throws ConfigurationException
-	 * @throws JsonParseException
-	 * @throws ClassNotFoundException
-	 * @throws Exception
-	 */
-	public void handlerAdd(String sourceName, String handlerClass) throws ConfigurationException {
-
-		Sources sources = getDataSources();
-		if (sources == null)
-			throw new ConfigurationException("No datasource found");
-
-		for (Source source : sources.getSources()) {
-			if (source.getName().equals(sourceName)) {
-				addHandlerToDatasource(source, handlerClass);
-				setDataSources(sources);
-				logger.info(handlerClass + ": handler added to datasource " + sourceName);
-				return;
-			}
-		}
-		throw new ConfigurationException(sourceName + ": datasource not found");
-	}
-
-	private void addHandlerToDatasource(Source source, String handlerClass) throws ConfigurationException {
-
-		for (String handler : source.getHandlers()) {
-			if (handler.equals(handlerClass)) {
-				throw new ConfigurationException(
-						handlerClass + ": handler already exists for datasource " + source.getName());
-			}
-		}
-		try {
-			Class.forName(handlerClass);
-			source.getHandlers().add(handlerClass);
-			return;
-
-		} catch (ClassNotFoundException cnfe) {
-			throw new ConfigurationException(handlerClass + ": unable to add handler because the class was not found",
-					cnfe);
-		}
-	}
-
-	/**
-	 * Removes a handler from a datasource
-	 * 
-	 * @param sourceName
-	 *            datasource name
-	 * @param handlerClass
-	 *            handler's class name
-	 * @throws IOException
-	 * @throws ConfigurationException
-	 * @throws JsonParseException
-	 * @throws Exception
-	 */
-	public void handlerDelete(String sourceName, String handlerClass) throws ConfigurationException {
-
-		Sources sources = getDataSources();
-		if (sources == null)
-			throw new ConfigurationException("No datasources found");
-
-		for (Source source : sources.getSources()) {
-			if (source.getName().equals(sourceName)) {
-				deleteHandlerFromDatasource(source, handlerClass);
-				setDataSources(sources);
-
-			}
-		}
-		throw new ConfigurationException(sourceName + ": datasource not found");
-	}
-
-	private void deleteHandlerFromDatasource(Source source, String handlerClass) throws ConfigurationException {
-
-		for (String handler : source.getHandlers()) {
-			if (handler.equals(handlerClass)) {
-				source.getHandlers().remove(handler);
-				logger.info(handlerClass + ": handler removed from datasource " + source.getName());
-				return;
-			}
-		}
-		throw new ConfigurationException(
-				source.getName() + ": datasource does not have this handler (" + handlerClass + ")");
 	}
 
 	/**

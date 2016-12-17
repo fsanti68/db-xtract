@@ -27,7 +27,6 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.testng.Assert;
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
@@ -37,12 +36,12 @@ public class ConfigTest {
 	private static final String zookeeper = "localhost:2181";
 	private static final long interval = 1000L;
 	private static final String driver = "org.gjt.mm.mysql.Driver";
-	private static final String connection = "jdbc:mysql://localhost:3306/dbxtest";
+	private static final String connection = "jdbc:mysql://localhost:3306/dbxtest?useSSL=false";
 	private static final String handler = "com.dsf.dbxtract.cdc.sample.TestHandler";
 
 	private Config config;
 
-	@BeforeTest
+	@Test
 	public void setUp() throws Exception {
 		File f = File.createTempFile("config", "props");
 		FileWriter fw = new FileWriter(f);
@@ -50,6 +49,10 @@ public class ConfigTest {
 				+ "\nlog4j.appender.A1.layout=org.apache.log4j.PatternLayout"
 				+ "\nlog4j.appender.A1.layout.ConversionPattern=%-4r [%t] %-5p %c %x - %m%n");
 		fw.append("\nzookeeper=").append(zookeeper).append("\nthread.pool.size=5");
+		fw.append("\ninterval=").append(Long.toString(interval)).append("\nsources=test")
+				.append("\nsource.test.connection=jdbc:mysql://localhost:3306/dbxtest?useSSL=false")
+				.append("\nsource.test.driver=org.gjt.mm.mysql.Driver\nsource.test.user=root")
+				.append("\nsource.test.password=mysql\nsource.test.handlers=com.dsf.dbxtract.cdc.sample.TestHandler");
 		fw.close();
 
 		Sources sources = new Sources();
@@ -68,12 +71,12 @@ public class ConfigTest {
 		config = new Config(f.getAbsolutePath());
 	}
 
-	@Test
+	@Test(dependsOnMethods = { "setUp" })
 	public void testConfig() {
 		Assert.assertNotNull(config);
 	}
 
-	@Test
+	@Test(dependsOnMethods = { "testConfig" })
 	public void testGetDataSources() throws Exception {
 		Assert.assertTrue(config.getDataSources().getSources().size() == 1);
 		Source src = config.getDataSources().getSources().get(0);
@@ -81,13 +84,13 @@ public class ConfigTest {
 		Assert.assertEquals(driver, src.getDriver());
 	}
 
-	@Test
+	@Test(dependsOnMethods = { "testConfig" })
 	public void testGetHandlers() throws Exception {
 		Source src = config.getDataSources().getSources().get(0);
 		Assert.assertEquals(handler, src.getHandlers().get(0));
 	}
 
-	@Test
+	@Test(dependsOnMethods = { "testConfig" })
 	public void testGetSourceByHandler() throws Exception {
 		Source src = config.getDataSources().getSources().get(0);
 		for (JournalHandler handler : config.getHandlers()) {
@@ -95,17 +98,17 @@ public class ConfigTest {
 		}
 	}
 
-	@Test
+	@Test(dependsOnMethods = { "testConfig" })
 	public void testGetZooKeeper() throws Exception {
 		Assert.assertEquals(zookeeper, config.getZooKeeper());
 	}
 
-	@Test
+	@Test(dependsOnMethods = { "testConfig" })
 	public void testGetInterval() throws Exception {
 		Assert.assertEquals(interval, config.getDataSources().getInterval());
 	}
 
-	@Test
+	@Test(dependsOnMethods = { "testConfig" })
 	public void testGetAgentName() {
 		Assert.assertNotNull(config.getAgentName());
 	}

@@ -50,11 +50,9 @@ public class App {
 
 	private static final String PARAM_CONFIG = "config";
 	private static final String PARAM_MONITOR = "monitor";
-	private static final String PARAM_SOURCEADD = "source-add";
-	private static final String PARAM_SOURCEDEL = "source-delete";
-	private static final String PARAM_SOURCEINTVL = "source-interval";
-	private static final String PARAM_HANDLERADD = "handler-add";
-	private static final String PARAM_HANDLERDEL = "handler-delete";
+	
+	private static final String COMMAND_LIST = "list";
+	private static final String COMMAND_START = "start";
 
 	public static final String BASEPREFIX = "/dbxtract/cdc";
 
@@ -133,23 +131,6 @@ public class App {
 
 		// commands:
 		OptionGroup commands = new OptionGroup();
-		// --source-add <name> <conn> <driver> <user> <password>
-		commands.addOption(Option.builder().longOpt(PARAM_SOURCEADD).numberOfArgs(5)
-				.argName("name conn driver user passwd").desc("add new datasource").required(false).build());
-		// --source-delete <name>
-		commands.addOption(Option.builder().longOpt(PARAM_SOURCEDEL).numberOfArgs(1).argName("name")
-				.desc("remove datasource").required(false).build());
-		// --source-interval <interval ms>
-		commands.addOption(Option.builder().longOpt(PARAM_SOURCEINTVL).numberOfArgs(1).argName("millisecs")
-				.desc("set datasource scan interval").required(false).build());
-		// --handler-add <source> <handler>
-		commands.addOption(Option.builder().longOpt(PARAM_HANDLERADD).numberOfArgs(2).argName("source handlerClass")
-				.desc("add new handler to an existing datasource (i.e. handler-add myds com.cdc.MyHandler)")
-				.required(false).build());
-		// --handler-delete <source> <handler>
-		commands.addOption(Option.builder().longOpt(PARAM_HANDLERDEL).numberOfArgs(2).argName("source handlerClass")
-				.desc("remove handler from datasource (i.e. handler-delete myds com.cdc.MyHandler)").required(false)
-				.build());
 		// --list
 		commands.addOption(Option.builder().longOpt("list").hasArg(false)
 				.desc("list configuration parameters and values").required(false).build());
@@ -179,37 +160,11 @@ public class App {
 		if (cmd.hasOption(PARAM_MONITOR)) {
 			monitorPort = Integer.parseInt(cmd.getOptionValue(PARAM_MONITOR));
 		}
-		if (cmd.hasOption(PARAM_SOURCEADD)) {
-			String[] params = cmd.getOptionValues(PARAM_SOURCEADD);
-			if (params == null || params.length < 5)
-				throw new InvalidParameterException(
-						"Parameters required: <source name> <connection string> <driver class> <username> <password>");
-			config.datasourceAdd(params[0], params[1], params[2], params[3], params[4]);
 
-		} else if (cmd.hasOption(PARAM_SOURCEDEL)) {
-			String param = cmd.getOptionValue(PARAM_SOURCEDEL);
-			config.datasourceDelete(param);
-
-		} else if (cmd.hasOption(PARAM_SOURCEINTVL)) {
-			String param = cmd.getOptionValue(PARAM_SOURCEINTVL);
-			config.datasourceInterval(param);
-
-		} else if (cmd.hasOption(PARAM_HANDLERADD)) {
-			String[] params = cmd.getOptionValues(PARAM_HANDLERADD);
-			if (params == null || params.length < 2)
-				throw new InvalidParameterException("Parameters required: <sourceName> <handlerClass>");
-			config.handlerAdd(params[0], params[1]);
-
-		} else if (cmd.hasOption(PARAM_HANDLERDEL)) {
-			String[] params = cmd.getOptionValues(PARAM_HANDLERDEL);
-			if (params == null || params.length < 2)
-				throw new InvalidParameterException("Parameters required: <sourceName> <handlerClass>");
-			config.handlerDelete(params[0], params[1]);
-
-		} else if (cmd.hasOption("list")) {
+		if (cmd.hasOption(COMMAND_LIST)) {
 			config.listAll();
 
-		} else if (cmd.hasOption("start")) {
+		} else if (cmd.hasOption(COMMAND_START)) {
 			logger.info("Welcome to db-xtract");
 
 			// get db-xtract configuration
@@ -224,7 +179,7 @@ public class App {
 
 		} else {
 			throw new ParseException(
-					"A command is required: --source-add, --source-delete, --source-interval, --handler-add, --handler-delete, --list or --start");
+					"A command is required: --list or --start");
 		}
 	}
 
@@ -233,25 +188,13 @@ public class App {
 	 * Starts the dbxtract app.
 	 * </p>
 	 * <p>
-	 * usage: java -jar dbxtract.jar --config <file><br>
-	 * [--handler-add <source handlerClass> |<br>
-	 * --handler-delete <source handlerClass> |<br>
-	 * --list | --source-add <name conn driver user passwd> |<br>
-	 * --source-delete <name> | --source-interval <millisecs> |<br>
-	 * --start] [--monitor <port>]
+	 * usage: java -jar dbxtract.jar --config <file> [--list | --start] [--monitor <port>]
 	 * 
 	 * <pre>
-	 * --config <file>                        configuration file pathname
-	 * --handler-add <source handlerClass>    add new handler to an existing
-	 *                                        datasource (i.e. handler-add
-	 *                                        myds com.cdc.MyHandler)
-	 * --handler-delete <source handlerClass> remove handler from datasource
-	 *                                        (i.e. handler-delete myds com.cdc.MyHandler)
-	 * --list                                 list configuration parameters and values
-	 * --monitor <port>                       monitoring port number (default: 9000)
-	 * --source-add <name conn driver user passwd> add new datasource --source-delete <name>
-	 * remove datasource --source-interval <millisecs> set datasource scan
-	 * interval --start start dbxtract agent
+	 * --config <file>    configuration file pathname
+	 * --list             list configuration parameters and values
+	 * --monitor <port>   monitoring port number (default: 9000)
+	 * --start            start dbxtract agent
 	 * </pre>
 	 * </p>
 	 * 
