@@ -310,13 +310,13 @@ public class Config {
 	 * @throws Exception
 	 */
 	public void listAll() throws ConfigurationException {
-		Sources sources = getDataSources();
-		if (sources == null)
+		Sources srcs = getDataSources();
+		if (srcs == null)
 			throw new ConfigurationException("No datasources found!");
 
 		ObjectMapper mapper = new ObjectMapper();
 		try {
-			logger.info(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(sources));
+			logger.info(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(srcs));
 
 		} catch (Exception e) {
 			throw new ConfigurationException("failed to get datasource from zk", e);

@@ -80,11 +80,11 @@ public class AppJournalWindowTest {
 	/**
 	 * Rigourous Test :-)
 	 */
-	@Test(dependsOnMethods = "setUp")
+	@Test(dependsOnMethods = "setUp", timeOut = 60000)
 	public void testAppWithJournalWindow() throws Exception {
 
-		final Config config = new Config(
-				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-window.properties"));
+		final Config config = new Config(getClass().getClassLoader()
+				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-window.properties"));
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().getSources().get(0);

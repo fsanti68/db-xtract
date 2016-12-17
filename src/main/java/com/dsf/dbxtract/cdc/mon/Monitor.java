@@ -36,13 +36,6 @@ public class Monitor extends NanoHTTPD {
 		logger.info("Started monitor at port " + port);
 	}
 
-	/**
-	 * Shutdown the monitor listener.
-	 */
-	public void stop() {
-		super.stop();
-	}
-
 	@Override
 	public Response serve(IHTTPSession session) {
 		Method method = session.getMethod();

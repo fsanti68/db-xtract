@@ -34,7 +34,7 @@ public class Statistics {
 	private ObjectMapper mapper;
 
 	/**
-	 * 
+	 * Constructor
 	 */
 	public Statistics() {
 		this.mapper = new ObjectMapper();
@@ -84,15 +84,16 @@ public class Statistics {
 
 			byte[] d = client.getData().forPath(path);
 			StatEntry entry = null;
-			try {
-				if (d != null && d.length > 0 && d[0] == '{')
-					entry = mapper.readValue(d, StatEntry.class);
-			} catch (JsonMappingException e) {
-				logger.warn("invalid json at " + path, e);
-			}
+			if (d != null && d.length > 0 && d[0] == '{')
+				entry = mapper.readValue(d, StatEntry.class);
+
 			if (entry == null)
 				entry = new StatEntry(handler);
 			return entry;
+
+		} catch (JsonMappingException e) {
+			logger.warn("invalid json at " + path, e);
+			return new StatEntry(handler);
 
 		} catch (Exception e) {
 			logger.error("Failed to obtain " + path, e);
@@ -125,6 +126,7 @@ public class Statistics {
 		 * No parameters constructor, needed by json marshalling/unmarshaling.
 		 */
 		public StatEntry() {
+			// void constructor
 		}
 
 		/**

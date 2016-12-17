@@ -55,11 +55,11 @@ public class AppJournalDeleteTest {
 	/**
 	 * Rigourous Test :-)
 	 */
-	@Test
+	@Test(timeOut = 60000)
 	public void testAppWithJournalDelete() throws Exception {
 
-		final Config config = new Config(
-				getClass().getClassLoader().getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-delete.properties"));
+		final Config config = new Config(getClass().getClassLoader()
+				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-delete.properties"));
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().getSources().get(0);

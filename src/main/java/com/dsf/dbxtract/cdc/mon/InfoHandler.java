@@ -39,10 +39,23 @@ public class InfoHandler {
 	private ObjectMapper mapper = null;
 	private Config config = null;
 
+	/**
+	 * Constructor for /info request's object.
+	 * 
+	 * @param config
+	 *            configuration object
+	 */
 	public InfoHandler(Config config) {
 		this.config = config;
 	}
 
+	/**
+	 * Serve /info requests.
+	 * 
+	 * @param session
+	 *            {@link IHTTPSession} session data
+	 * @return
+	 */
 	public Response serve(IHTTPSession session) {
 
 		try {

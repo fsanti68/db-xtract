@@ -59,9 +59,9 @@ public class SimpleJournalHandler implements JournalHandler {
 	private static void validateParameters(String journalTable, String query, int batchSize, Publisher publisher)
 			throws ConfigurationException {
 
-		if (journalTable == null || journalTable.isEmpty())
+		if (isEmptyOrNull(journalTable))
 			throw new ConfigurationException("journal table name is required");
-		if (query == null || query.isEmpty())
+		if (isEmptyOrNull(query))
 			throw new ConfigurationException("query is required");
 		if (batchSize <= 0)
 			throw new ConfigurationException("batch size must be a positive integer");
@@ -70,31 +70,36 @@ public class SimpleJournalHandler implements JournalHandler {
 	}
 
 	/**
-	 * 
+	 * @return journal table name
 	 */
 	public String getJournalTable() {
 		return journal;
 	}
 
 	/**
-	 * 
+	 * @return processing batch size (maximum rows to be imported per cycle)
 	 */
 	public int getBatchSize() {
 		return batchSize;
 	}
 
 	/**
-	 * 
+	 * @return data retrieval query
 	 */
 	public String getTargetQuery() {
 		return query;
 	}
 
 	/**
-	 * 
+	 * @return publish imported data to registered publisher (see
+	 *         {@link SimpleJournalHandler}).
 	 */
 	public void publish(Data data) throws PublishException {
 		publisher.publish(data);
+	}
+
+	private static boolean isEmptyOrNull(String o) {
+		return o == null || o.isEmpty();
 	}
 
 	@Override
