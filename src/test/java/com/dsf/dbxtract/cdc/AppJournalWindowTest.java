@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.curator.RetryPolicy;
@@ -151,7 +152,7 @@ public class AppJournalWindowTest {
 		Assert.assertEquals(config.getHandlers().iterator().next().getStrategy(), JournalStrategy.WINDOW);
 
 		while (true) {
-			Thread.sleep(1000);
+			TimeUnit.MILLISECONDS.sleep(500);
 
 			try {
 				Long lastWindowId = Long.parseLong(new String(client.getData().forPath(zkKey)));
