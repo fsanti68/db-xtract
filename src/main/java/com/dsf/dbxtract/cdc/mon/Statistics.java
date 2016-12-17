@@ -85,7 +85,8 @@ public class Statistics {
 			byte[] d = client.getData().forPath(path);
 			StatEntry entry = null;
 			try {
-				entry = mapper.readValue(d, StatEntry.class);
+				if (d != null && d.length > 0 && d[0] == '{')
+					entry = mapper.readValue(d, StatEntry.class);
 			} catch (JsonMappingException e) {
 				logger.warn("invalid json at " + path, e);
 			}

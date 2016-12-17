@@ -52,22 +52,22 @@ Create your own configuration file:
 	
 	zookeeper=localhost:2181
 	thread.pool.size=3
-
-Configure remaining parameters (that are shared among all DB-Xtract nodes):
-
-1) create a new datasource (essencially a database connection):
-
-	$ java -jar dbxtract.jar --config myconfig.properties --source-add test jdbc:mysql://localhost:3306/dbxtest org.gjt.mm.mysql.Driver root mysql
 	
-2) assign a new CDC handler for this datasource:
-
-	$ java -jar dbxtract.jar --config myconfig.properties --handler-add test com.dsf.dbxtract.cdc.sample.TestHandler
+	interval=5000
 	
-3) check your new configuration:
+	sources=test
+	
+	source.test.connection=jdbc:mysql://localhost:3306/smartboard?useSSL=false
+	source.test.driver=org.gjt.mm.mysql.Driver
+	source.test.user=root
+	source.test.password=mysql
+	source.test.handlers=com.dsf.dbxtract.cdc.sample.TestHandler
+
+Check your configuration...
 
 	$ java -jar dbxtract.jar --config myconfig.properties --list
 	
-4) start the agent:
+... and start the agent:
 
 	$ java -jar dbxtract.jar --config myconfig.properties --start
 
