@@ -20,6 +20,7 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.log4j.LogManager;
@@ -107,7 +108,7 @@ public class AppJournalDeleteTest {
 		ps.close();
 
 		while (true) {
-			Thread.sleep(500);
+			TimeUnit.MILLISECONDS.sleep(500);
 
 			ResultSet rs = conn.createStatement().executeQuery("select count(*) from j$test");
 			if (rs.next()) {
