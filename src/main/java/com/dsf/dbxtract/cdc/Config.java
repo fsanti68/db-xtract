@@ -38,14 +38,70 @@ import org.codehaus.jackson.map.ObjectMapper;
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
 
 /**
+ * Configuration access object.
+ * 
+ * Configuration items:
+ * <table>
+ * <thead>
+ * <tr>
+ * <th>Item</th>
+ * <th>Description</th>
+ * </tr>
+ * </thead> <tbody>
+ * <tr>
+ * <td>zookeeper</td>
+ * <td>Zookeeper's connection address</td>
+ * </tr>
+ * <tr>
+ * <td>thread.pool.size</td>
+ * <td>Maximum concurrent data capture executors</td>
+ * </tr>
+ * <tr>
+ * <td>affinity</td>
+ * <td>Comma-delimited list of data sources enabled for this node</td>
+ * </tr>
+ * <tr>
+ * <td>interval</td>
+ * <td>Interval between data capture cycles (any integer equal to or greater
+ * than zero)</td>
+ * </tr>
+ * <tr>
+ * <td>sources</td>
+ * <td>Comma-delimited list of data sources</td>
+ * </tr>
+ * <tr>
+ * <td>source.&lt;<i>source</i>.&gt;connection</td>
+ * <td>jdbc connection string</td>
+ * </tr>
+ * <tr>
+ * <td>source.&lt;<i>source</i>.&gt;driver</td>
+ * <td>jdbc driver's full classname</td>
+ * </tr>
+ * <tr>
+ * <td>source.&lt;<i>source</i>.&gt;user</td>
+ * <td>connection's user name</td>
+ * </tr>
+ * <tr>
+ * <td>source.&lt;<i>source</i>.&gt;password</td>
+ * <td>user's password</td>
+ * </tr>
+ * <tr>
+ * <td>source.&lt;<i>source</i>.&gt;handlers</td>
+ * <td>comma-delimited list of handler's full classnames</td>
+ * </tr>
+ * </tbody>
+ * </table>
  * 
  * @author fabio de santi
- * @version 0.4
+ * @version 0.5
  */
 public class Config {
 
 	private static final Logger logger = LogManager.getLogger(Config.class.getName());
 
+	private static final long MINUTE = 60000L;
+	private long lastLoaded = 0L;
+	private String configFilename = null;
 	private Properties props;
 	private String agentName = null;
 	private Map<JournalHandler, Source> handlerMap = null;
@@ -61,35 +117,33 @@ public class Config {
 	 */
 	public Config(String path) throws ConfigurationException {
 
+		configFilename = path;
+		init(path);
+	}
+
+	/**
+	 * 
+	 * @param filename
+	 * @throws ConfigurationException
+	 */
+	private void init(String filename) throws ConfigurationException {
+
 		InputStream stream = null;
 		try {
-			stream = new FileInputStream(new File(path));
+			stream = new FileInputStream(new File(filename));
 			init(stream);
 
 		} catch (FileNotFoundException e) {
-			throw new ConfigurationException("configuration file not found: " + path, e);
+			throw new ConfigurationException("configuration file not found: " + filename, e);
 
 		} finally {
 			if (stream != null)
 				try {
 					stream.close();
 				} catch (IOException e) {
-					logger.warn("failed to close file " + path, e);
+					logger.warn("failed to close file " + filename, e);
 				}
 		}
-	}
-
-	/**
-	 * Loads configuration from a stream.
-	 * 
-	 * @param source
-	 *            configuration source stream
-	 * @throws IOException
-	 * @throws ConfigurationException
-	 * @throws Exception
-	 */
-	public Config(InputStream source) throws ConfigurationException {
-		init(source);
 	}
 
 	/**
@@ -126,6 +180,14 @@ public class Config {
 			logger.warn("No datasources defined");
 	}
 
+	private void checkUpdated() throws ConfigurationException {
+
+		if (System.currentTimeMillis() - lastLoaded > MINUTE) {
+			lastLoaded = System.currentTimeMillis();
+			init(configFilename);
+		}
+	}
+
 	/**
 	 * Add a handler to the handler's map (handler x source)
 	 * 
@@ -157,6 +219,7 @@ public class Config {
 	 */
 	public Sources getDataSources() throws ConfigurationException {
 
+		checkUpdated();
 		if (sources == null) {
 			String srcs = props.getProperty("sources");
 			if (srcs == null)
@@ -197,18 +260,22 @@ public class Config {
 
 	/**
 	 * 
-	 * @return
+	 * @return a collection of handlers
 	 */
-	public Collection<JournalHandler> getHandlers() {
+	public Collection<JournalHandler> getHandlers() throws ConfigurationException {
+		checkUpdated();
 		return handlerMap.keySet();
 	}
 
 	/**
+	 * Retrieves the data source associated to a given handler.
 	 * 
 	 * @param handler
-	 * @return
+	 *            {@link JournalHandler} object
+	 * @return a {@link Source} object associated to the handler
 	 */
-	public Source getSourceByHandler(JournalHandler handler) {
+	public Source getSourceByHandler(JournalHandler handler) throws ConfigurationException {
+		checkUpdated();
 		return handlerMap.get(handler);
 	}
 
@@ -217,6 +284,7 @@ public class Config {
 	 * @return ZooKeeper connection string (i.e. "localhost:2181")
 	 */
 	public String getZooKeeper() throws ConfigurationException {
+		checkUpdated();
 		String s = props.getProperty("zookeeper");
 		if (s == null || s.isEmpty())
 			throw new ConfigurationException("zookeeper is a required configuration parameter!");
@@ -227,7 +295,8 @@ public class Config {
 	 * 
 	 * @return maximum concurrent threads
 	 */
-	public int getThreadPoolSize() {
+	public int getThreadPoolSize() throws ConfigurationException {
+		checkUpdated();
 		int pool = 5;
 		String p = props.getProperty("thread.pool.size");
 		if (p != null && !p.isEmpty()) {
@@ -246,8 +315,9 @@ public class Config {
 	 * 
 	 * @return empty list or a list of datasources for this node
 	 */
-	public List<String> getAffinity() {
+	public List<String> getAffinity() throws ConfigurationException {
 
+		checkUpdated();
 		List<String> affinity = new ArrayList<String>();
 		String aff = props.getProperty("affinity");
 		if (aff != null && !aff.isEmpty()) {
@@ -301,7 +371,11 @@ public class Config {
 		} catch (Exception e) {
 			logger.warn("[Zookeeper address ]", e);
 		}
-		logger.info("[Thread pool size  ] " + getThreadPoolSize());
+		try {
+			logger.info("[Thread pool size  ] " + getThreadPoolSize());
+		} catch (ConfigurationException ce) {
+			logger.warn("[Thread pool size  ] ", ce);
+		}
 	}
 
 	/**
@@ -338,7 +412,12 @@ public class Config {
 		} catch (Exception e) {
 			logger.warn("zookeeper address retrieval", e);
 		}
-		sb.append(", threadPoolSize=" + getThreadPoolSize()).append(']');
+		try {
+			sb.append(", threadPoolSize=" + getThreadPoolSize());
+		} catch (ConfigurationException ce) {
+			logger.warn("thread pool size retrieval", ce);
+		}
+		sb.append(']');
 		return sb.toString();
 	}
 }

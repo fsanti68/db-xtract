@@ -50,17 +50,20 @@ public class AppJournalWindowTest {
 
 	private static final Logger logger = LogManager.getLogger(AppJournalWindowTest.class.getName());
 
+	private static final String PROPERTY_RESOURCE = "com/dsf/dbxtract/cdc/config-app-journal-window.properties";
+
 	private int TEST_SIZE = 300;
 
 	private CuratorFramework client;
 	private Monitor monitor;
 	private App app;
+	private String configFile;
 
 	@Test
 	public void setUp() throws Exception {
 
-		URL cfg = ClassLoader.getSystemResource("com/dsf/dbxtract/cdc/config-app-journal-window.properties");
-		PropertyConfigurator.configure(cfg);
+		configFile = ClassLoader.getSystemResource(PROPERTY_RESOURCE).getFile();
+		PropertyConfigurator.configure(configFile);
 
 		logger.info("Testing Journal-based CDC with window strategy");
 
@@ -84,8 +87,7 @@ public class AppJournalWindowTest {
 	@Test(dependsOnMethods = "setUp", timeOut = 60000)
 	public void testAppWithJournalWindow() throws Exception {
 
-		final Config config = new Config(getClass().getClassLoader()
-				.getResourceAsStream("com/dsf/dbxtract/cdc/config-app-journal-window.properties"));
+		final Config config = new Config(configFile);
 
 		BasicDataSource ds = new BasicDataSource();
 		Source source = config.getDataSources().getSources().get(0);
