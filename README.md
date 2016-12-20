@@ -4,7 +4,7 @@ Welcome to the DB-Xtract!
 
 It is an attempt to create a scalable, fault-tolerant and flexible change data capture (_CDC_) tool. At this very first moment, it is providing journal-based _CDC_, but I want to add other mechanisms for more performance and lower resources consumption.
 
-DB-Xtract can be distributed as concurrent _CDC_ agents, providing scalability, availability and fault-tolerance. It relies on Apache's ZooKeeper to coordinate concurrent data captures in a safe and still performatic way.
+DB-Xtract can be distributed as concurrent _CDC_ agents, taking advantage of Apache's ZooKeeper coordination capabilities.
 
 ## Getting Started
 
@@ -25,7 +25,7 @@ Create your local copy of project:
 
 **Note**: The <code>master</code> branch may be in an unstable or even broken state during development. Please use [releases](https://github.com/fsanti68/db-xtract/releases) instead of the <code>master</code> branch in order to get stable binaries.
 
-You can create in your database two tables, that will act as source table and journal table:
+You can create a new database with two tables -- a source table and journal table:
 
 	create database dbxtest;
 	
@@ -44,7 +44,7 @@ You can create in your database two tables, that will act as source table and jo
 		key2 int not null
 	);
 
-Create your own configuration file:
+Create your own configuration file <code>myconfig.properties</code>:
 
 	log4j.appender.A1=org.apache.log4j.ConsoleAppender
 	log4j.appender.A1.layout=org.apache.log4j.PatternLayout
@@ -57,7 +57,7 @@ Create your own configuration file:
 	
 	sources=test
 	
-	source.test.connection=jdbc:mysql://localhost:3306/smartboard?useSSL=false
+	source.test.connection=jdbc:mysql://localhost:3306/dbxtest?useSSL=false
 	source.test.driver=org.gjt.mm.mysql.Driver
 	source.test.user=root
 	source.test.password=mysql
@@ -74,7 +74,7 @@ Check your configuration...
 
 ## Running the tests
 
-All tests are provided as JUnit test cases. Before starting tests, be sure that mysql (or your preferred database) and ZooKeeper are ready, running and configured in app's property files (<code>src/test/java/com/dsf/dbxtract/cdc/config-app-journal-*.properties</code>).
+All tests are provided as TestNG test cases. Before starting tests, be sure that mysql (or your preferred database) and ZooKeeper are ready, running and configured in app's property files (<code>src/test/java/com/dsf/dbxtract/cdc/config-app-journal-*.properties</code>).
 
 	mvn test
 	
