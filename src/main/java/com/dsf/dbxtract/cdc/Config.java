@@ -70,23 +70,23 @@ import com.dsf.dbxtract.cdc.journal.JournalHandler;
  * <td>Comma-delimited list of data sources</td>
  * </tr>
  * <tr>
- * <td>source.&lt;<i>source</i>.&gt;connection</td>
+ * <td>source.&lt;<i>source</i>&gt;.connection</td>
  * <td>jdbc connection string</td>
  * </tr>
  * <tr>
- * <td>source.&lt;<i>source</i>.&gt;driver</td>
+ * <td>source.&lt;<i>source</i>&gt;.driver</td>
  * <td>jdbc driver's full classname</td>
  * </tr>
  * <tr>
- * <td>source.&lt;<i>source</i>.&gt;user</td>
+ * <td>source.&lt;<i>source</i>&gt;.user</td>
  * <td>connection's user name</td>
  * </tr>
  * <tr>
- * <td>source.&lt;<i>source</i>.&gt;password</td>
+ * <td>source.&lt;<i>source</i>&gt;.password</td>
  * <td>user's password</td>
  * </tr>
  * <tr>
- * <td>source.&lt;<i>source</i>.&gt;handlers</td>
+ * <td>source.&lt;<i>source</i>&gt;.handlers</td>
  * <td>comma-delimited list of handler's full classnames</td>
  * </tr>
  * </tbody>
