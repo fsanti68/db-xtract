@@ -30,7 +30,7 @@ import com.dsf.dbxtract.cdc.journal.JournalStrategy;
  * </p>
  * <ul>
  * <li>journal: j$test</li>
- * <li>batch size: 200 rows per batch</li>
+ * <li>batch size: 300 rows per batch</li>
  * <li>target query: select * from test where key1 = :key1 and key2 = :key2</li>
  * </ul>
  * 
@@ -46,14 +46,14 @@ public class TestWindowHandler implements JournalHandler {
 	}
 
 	public int getBatchSize() {
-		return 200;
+		return 300;
 	}
 
 	/**
 	 * Query parameters must be referenced just like in JPA's NamedQueries.
 	 */
 	public String getTargetQuery() {
-		return "SELECT * FROM TEST WHERE KEY1 = :key1 AND KEY2 = :key2";
+		return "SELECT * FROM test WHERE key1 = :key1 AND key2 = :key2";
 	}
 
 	/**

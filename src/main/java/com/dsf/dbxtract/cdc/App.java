@@ -188,12 +188,12 @@ public class App {
 	 * Starts the dbxtract app.
 	 * </p>
 	 * <p>
-	 * usage: java -jar dbxtract.jar --config <file> [--list | --start] [--monitor <port>]
+	 * usage: java -jar dbxtract.jar --config &lt;file&gt; [--list | --start] [--monitor &lt;port&gt;]
 	 * 
 	 * <pre>
-	 * --config <file>    configuration file pathname
+	 * --config &lt;file&gt;    configuration file pathname
 	 * --list             list configuration parameters and values
-	 * --monitor <port>   monitoring port number (default: 9000)
+	 * --monitor &lt;port&gt;   monitoring port number (default: 9000)
 	 * --start            start dbxtract agent
 	 * </pre>
 	 * </p>
