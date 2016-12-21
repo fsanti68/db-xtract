@@ -38,9 +38,11 @@ import org.codehaus.jackson.map.ObjectMapper;
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
 
 /**
- * Configuration access object.
- * 
- * Configuration items:
+ * <p>
+ * The Config class represents a configuration properties file.
+ * </p>
+ * <p>
+ * Expected configuration items are:
  * <table>
  * <thead>
  * <tr>
@@ -91,6 +93,7 @@ import com.dsf.dbxtract.cdc.journal.JournalHandler;
  * </tr>
  * </tbody>
  * </table>
+ * </p>
  * 
  * @author fabio de santi
  * @version 0.5
@@ -108,7 +111,7 @@ public class Config {
 	private Sources sources = null;
 
 	/**
-	 * Loads configuration file.
+	 * Constructs the object loading configuration properties from a given file.
 	 * 
 	 * @param path
 	 *            file/path name
@@ -122,8 +125,10 @@ public class Config {
 	}
 
 	/**
+	 * Read configuration file data.
 	 * 
 	 * @param filename
+	 *            properties file pathname
 	 * @throws ConfigurationException
 	 */
 	private void init(String filename) throws ConfigurationException {
@@ -147,7 +152,7 @@ public class Config {
 	}
 
 	/**
-	 * Get configuration as a stream
+	 * Get configuration data from a stream and initializes all class members.
 	 * 
 	 * @param stream
 	 * @throws ConfigurationException
@@ -180,6 +185,11 @@ public class Config {
 			logger.warn("No datasources defined");
 	}
 
+	/**
+	 * Updates the class attributes at least every one minute.
+	 * 
+	 * @throws ConfigurationException
+	 */
 	private void checkUpdated() throws ConfigurationException {
 
 		if (System.currentTimeMillis() - lastLoaded > MINUTE) {
@@ -189,7 +199,7 @@ public class Config {
 	}
 
 	/**
-	 * Add a handler to the handler's map (handler x source)
+	 * Add a handler to the handler's map (handler x source).
 	 * 
 	 * @param source
 	 * @throws ConfigurationException
@@ -212,7 +222,7 @@ public class Config {
 	 * Data sources are a list of database connections and its associated
 	 * handler's class names.
 	 * 
-	 * @return data sources list
+	 * @return a {@link Sources} object with a list of data sources
 	 * @throws IOException
 	 * @throws JsonParseException
 	 * @throws Exception
@@ -239,6 +249,14 @@ public class Config {
 		return sources;
 	}
 
+	/**
+	 * Retrieve a datasource by its name.
+	 * 
+	 * @param srcname
+	 *            data source name
+	 * @return a {@link Source} object that matches with the given name
+	 * @throws ConfigurationException
+	 */
 	private Source getDataSource(String srcname) throws ConfigurationException {
 
 		if (srcname == null || srcname.isEmpty())
@@ -259,6 +277,7 @@ public class Config {
 	}
 
 	/**
+	 * Retrieves all handlers defined in the configuration properties.
 	 * 
 	 * @return a collection of handlers
 	 */
@@ -271,7 +290,7 @@ public class Config {
 	 * Retrieves the data source associated to a given handler.
 	 * 
 	 * @param handler
-	 *            {@link JournalHandler} object
+	 *            a {@link JournalHandler} object
 	 * @return a {@link Source} object associated to the handler
 	 */
 	public Source getSourceByHandler(JournalHandler handler) throws ConfigurationException {
@@ -280,6 +299,7 @@ public class Config {
 	}
 
 	/**
+	 * Retrieves the zookeeper connection string.
 	 * 
 	 * @return ZooKeeper connection string (i.e. "localhost:2181")
 	 */
@@ -292,6 +312,7 @@ public class Config {
 	}
 
 	/**
+	 * Retrieves the <code>thread.pool.size</code> parameter.
 	 * 
 	 * @return maximum concurrent threads
 	 */
@@ -310,15 +331,16 @@ public class Config {
 	}
 
 	/**
-	 * Get a list of datasources enabled for this node. An empty list means that
-	 * all datasources must be considered.
+	 * Get a list of datasources enabled for this node (parameter
+	 * <code>affinity</code>). An empty list means that all datasources must be
+	 * considered.
 	 * 
 	 * @return empty list or a list of datasources for this node
 	 */
 	public List<String> getAffinity() throws ConfigurationException {
 
 		checkUpdated();
-		List<String> affinity = new ArrayList<String>();
+		List<String> affinity = new ArrayList<>();
 		String aff = props.getProperty("affinity");
 		if (aff != null && !aff.isEmpty()) {
 			String[] chunks = aff.split(",");
@@ -332,6 +354,16 @@ public class Config {
 	}
 
 	/**
+	 * Retrieves a 'unofficial' agent name based. This agent name is generated
+	 * as:
+	 * <ul>
+	 * <li>environment variable 'COMPUTERNAME' or</li>
+	 * <li>environment variable 'HOSTNAME' or</li>
+	 * <li>network's local hostname (<code>Agent-xxxxx</code>) or</li>
+	 * <li>a timestamp generated when the agent is started
+	 * (<code>Agent-999999</code>)
+	 * <li>
+	 * </ul>
 	 * 
 	 * @return a convenience name for dbxtract agent instance
 	 */
@@ -357,7 +389,7 @@ public class Config {
 	}
 
 	/**
-	 * nice logging for objects
+	 * Nice logging for objects
 	 */
 	public void report() {
 		logger.info("Loaded configuration: ");

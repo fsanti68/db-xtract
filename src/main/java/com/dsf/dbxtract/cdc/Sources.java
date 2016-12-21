@@ -23,7 +23,7 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * 
+ * "Container" class for data sources.
  * 
  * @author fabio de santi
  */
@@ -33,6 +33,10 @@ public class Sources {
 	private List<Source> sourceList = null;
 	private long interval = 5000L;
 
+	/**
+	 * 
+	 * @return list of {@link Source} objects
+	 */
 	public List<Source> getSources() {
 		if (sourceList == null)
 			sourceList = new ArrayList<Source>();
@@ -47,6 +51,12 @@ public class Sources {
 		return interval;
 	}
 
+	/**
+	 * Update execution interval
+	 * 
+	 * @param millisecs
+	 *            interval between executions
+	 */
 	public void setInterval(long millisecs) {
 		this.interval = millisecs;
 	}

@@ -17,15 +17,19 @@
 package com.dsf.dbxtract.cdc;
 
 /**
+ * Interface that represents a way to publish retrieved data.
  * 
  * @author fabio de santi
  *
  */
+@FunctionalInterface
 public interface Publisher {
 
 	/**
+	 * Publish retrieved data.
 	 * 
 	 * @param data
+	 *            {@link Data} object with retrieved data to be published
 	 */
 	public void publish(Data data);
 }

@@ -24,7 +24,8 @@ import java.util.List;
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
 
 /**
- * This class is used by {@link JournalHandler} to receive captured data.
+ * This class is used by {@link JournalHandler} to receive captured data and
+ * represents a list of retrieved rows.
  * 
  * @author fabio de santi
  *
@@ -32,9 +33,11 @@ import com.dsf.dbxtract.cdc.journal.JournalHandler;
 public class Data {
 
 	private String[] columnNames;
-	private List<Object[]> rows = new LinkedList<Object[]>();
+	private List<Object[]> rows = new LinkedList<>();
 
 	/**
+	 * Constructs a new object with a given list of column names. No data is
+	 * included at this time.
 	 * 
 	 * @param columnNames
 	 *            list of column names
@@ -44,9 +47,10 @@ public class Data {
 	}
 
 	/**
-	 * Add data from a retrieved row (ResultSet cursor)
+	 * Add new data from a retrieved row (ResultSet cursor)
 	 * 
 	 * @param rs
+	 *            {@link ResultSet} object
 	 * @throws SQLException
 	 */
 	public void append(ResultSet rs) throws SQLException {
@@ -64,7 +68,7 @@ public class Data {
 	 * 
 	 * @param values
 	 *            an array of objects (column's data)
-	 * @throws Exception
+	 * @throws DataColumnMatchException
 	 */
 	public void append(Object[] values) throws DataColumnMatchException {
 
@@ -78,6 +82,7 @@ public class Data {
 	}
 
 	/**
+	 * Retrieve the column names.
 	 * 
 	 * @return array of column names
 	 */
@@ -86,6 +91,7 @@ public class Data {
 	}
 
 	/**
+	 * Retrieve the list of data rows.
 	 * 
 	 * @return list of retrieved rows
 	 */

@@ -17,7 +17,7 @@
 package com.dsf.dbxtract.cdc;
 
 /**
- * Configuration exceptions:
+ * The class ConfigurationException represent one of the following conditions:
  * <ul>
  * <li>config properties not found</li>
  * <li>required parameter</li>
@@ -32,8 +32,10 @@ public class ConfigurationException extends Exception {
 	private static final long serialVersionUID = 1L;
 
 	/**
+	 * Construcs a new exception with specified detail message.
 	 * 
 	 * @param message
+	 *            exception's message
 	 */
 	public ConfigurationException(String message) {
 		super(message);
@@ -48,20 +50,30 @@ public class ConfigurationException extends Exception {
 	}
 
 	/**
+	 * Constructs a new exception with the specified detail message and cause.
 	 * 
 	 * @param message
+	 *            exception's message
 	 * @param cause
+	 *            causing {@link Throwable} object
 	 */
 	public ConfigurationException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
 	/**
+	 * Constructs a new exception with the specified detail message, cause,
+	 * suppression enabled or disabled, and writable stack trace enabled or
+	 * disabled.
 	 * 
 	 * @param message
+	 *            exception's message
 	 * @param cause
+	 *            causing {@link Throwable} object
 	 * @param enableSuppression
+	 *            whether or not suppression is enabled or disabled
 	 * @param writableStackTrace
+	 *            whether or not the stack trace should be writable
 	 */
 	public ConfigurationException(String message, Throwable cause, boolean enableSuppression,
 			boolean writableStackTrace) {

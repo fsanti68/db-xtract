@@ -23,7 +23,8 @@ import java.util.List;
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
 
 /**
- * Representa um banco de dados com tabelas a serem capturadas.
+ * Represents a database connection parameters and a list of all capture
+ * handlers associated to it.
  * 
  * @author fabio de santi
  * @version 0.2
@@ -38,6 +39,7 @@ public class Source {
 	private List<String> handlers;
 
 	/**
+	 * Constructor
 	 * 
 	 * @param name
 	 *            data source arbitrary name
@@ -69,29 +71,53 @@ public class Source {
 		// empty constructor is required by json mapping.
 	}
 
+	/**
+	 * 
+	 * @return datasource assigned name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * 
+	 * @return database jdbc connection string
+	 */
 	public String getConnection() {
 		return connection;
 	}
 
+	/**
+	 * 
+	 * @return jdbc driver class name
+	 */
 	public String getDriver() {
 		return driver;
 	}
 
+	/**
+	 * 
+	 * @return database connection username
+	 */
 	public String getUser() {
 		return user;
 	}
 
+	/**
+	 * 
+	 * @return database user's password
+	 */
 	public String getPassword() {
 		return password;
 	}
 
+	/**
+	 * 
+	 * @return list of capture handler's class names
+	 */
 	public List<String> getHandlers() {
 		if (handlers == null)
-			handlers = new ArrayList<String>();
+			handlers = new ArrayList<>();
 		return handlers;
 	}
 
