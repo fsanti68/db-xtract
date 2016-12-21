@@ -52,6 +52,7 @@ public class Data {
 	 * @param rs
 	 *            {@link ResultSet} object
 	 * @throws SQLException
+	 *             any data retrieval failure
 	 */
 	public void append(ResultSet rs) throws SQLException {
 
@@ -69,6 +70,7 @@ public class Data {
 	 * @param values
 	 *            an array of objects (column's data)
 	 * @throws DataColumnMatchException
+	 *             values array size differs from column names array size
 	 */
 	public void append(Object[] values) throws DataColumnMatchException {
 

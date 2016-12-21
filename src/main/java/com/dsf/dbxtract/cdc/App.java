@@ -81,6 +81,7 @@ public class App {
 	 * Starts scanning services.
 	 * 
 	 * @throws ConfigurationException
+	 *             any configuration error
 	 */
 	public void start() throws ConfigurationException {
 

@@ -57,6 +57,7 @@ public interface JournalHandler {
 	 * @param data
 	 *            object {@link Data} for captured data
 	 * @throws PublishException
+	 *             failed to publish retrieved data
 	 */
 	public void publish(Data data) throws PublishException;
 

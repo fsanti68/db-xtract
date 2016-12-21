@@ -25,6 +25,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 /**
+ * Convenience methods for database connections.
  * 
  * @author fabio de santi
  *
@@ -42,6 +43,7 @@ public class DBUtils {
 	/**
 	 * 
 	 * @param rs
+	 *            {@link ResultSet} object
 	 */
 	public static void close(ResultSet rs) {
 		if (rs != null)
@@ -56,6 +58,7 @@ public class DBUtils {
 	/**
 	 * 
 	 * @param stmt
+	 *            {@link Statement} object
 	 */
 	public static void close(Statement stmt) {
 		if (stmt != null)
@@ -70,6 +73,7 @@ public class DBUtils {
 	/**
 	 * 
 	 * @param stmt
+	 *            {@link NamedParameterStatement} object
 	 */
 	public static void close(NamedParameterStatement stmt) {
 		if (stmt != null)
@@ -84,6 +88,7 @@ public class DBUtils {
 	/**
 	 * 
 	 * @param c
+	 *            {@link Connection} object
 	 */
 	public static void close(Connection c) {
 		if (c != null)

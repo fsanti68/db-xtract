@@ -54,7 +54,7 @@ public class InfoHandler {
 	 * 
 	 * @param session
 	 *            {@link IHTTPSession} session data
-	 * @return
+	 * @return {@link Response} object
 	 */
 	public Response serve(IHTTPSession session) {
 

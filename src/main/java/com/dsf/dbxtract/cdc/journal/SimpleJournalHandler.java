@@ -48,6 +48,7 @@ public class SimpleJournalHandler implements JournalHandler {
 	 * @param strategy
 	 *            journal strategy
 	 * @throws ConfigurationException
+	 *             invalid parameters
 	 */
 	public SimpleJournalHandler(String journalTable, String query, int batchSize, Publisher publisher,
 			JournalStrategy strategy) throws ConfigurationException {

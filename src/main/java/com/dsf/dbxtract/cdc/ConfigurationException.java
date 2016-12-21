@@ -42,8 +42,10 @@ public class ConfigurationException extends Exception {
 	}
 
 	/**
+	 * Constructs a new exception with the specified cause.
 	 * 
 	 * @param cause
+	 *            causing {@link Throwable} object
 	 */
 	public ConfigurationException(Throwable cause) {
 		super(cause);
