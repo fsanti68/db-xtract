@@ -32,7 +32,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.codehaus.jackson.JsonParseException;
 
 import com.dsf.dbxtract.cdc.journal.JournalExecutor;
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
@@ -50,7 +49,7 @@ public class App {
 
 	private static final String PARAM_CONFIG = "config";
 	private static final String PARAM_MONITOR = "monitor";
-	
+
 	private static final String COMMAND_LIST = "list";
 	private static final String COMMAND_START = "start";
 
@@ -82,10 +81,6 @@ public class App {
 	 * Starts scanning services.
 	 * 
 	 * @throws ConfigurationException
-	 * @throws IOException
-	 * @throws JsonParseException
-	 * 
-	 * @throws Exception
 	 */
 	public void start() throws ConfigurationException {
 
@@ -178,8 +173,7 @@ public class App {
 			app.start();
 
 		} else {
-			throw new ParseException(
-					"A command is required: --list or --start");
+			throw new ParseException("A command is required: --list or --start");
 		}
 	}
 
@@ -188,7 +182,9 @@ public class App {
 	 * Starts the dbxtract app.
 	 * </p>
 	 * <p>
-	 * usage: java -jar dbxtract.jar --config &lt;file&gt; [--list | --start] [--monitor &lt;port&gt;]
+	 * usage: java -jar dbxtract.jar --config &lt;file&gt; [--list | --start]
+	 * [--monitor &lt;port&gt;]
+	 * </p>
 	 * 
 	 * <pre>
 	 * --config &lt;file&gt;    configuration file pathname
@@ -196,9 +192,9 @@ public class App {
 	 * --monitor &lt;port&gt;   monitoring port number (default: 9000)
 	 * --start            start dbxtract agent
 	 * </pre>
-	 * </p>
 	 * 
 	 * @param args
+	 *            execution call arguments
 	 */
 	public static void main(String[] args) {
 

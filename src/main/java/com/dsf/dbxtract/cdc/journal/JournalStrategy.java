@@ -41,7 +41,7 @@ public enum JournalStrategy {
 	 * 
 	 * @param id
 	 *            object's identifier (enum key).
-	 * @return
+	 * @return get the strategy by an id
 	 */
 	public JournalStrategy getById(int id) {
 		for (JournalStrategy js : values()) {

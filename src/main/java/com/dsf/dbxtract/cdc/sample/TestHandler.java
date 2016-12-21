@@ -63,7 +63,7 @@ public class TestHandler implements JournalHandler {
 	 * Publish imported data to... (kafka, a file, a queue, another database,
 	 * etc)
 	 * 
-	 * @param data
+	 * @param data {@link Data} object
 	 */
 	@Override
 	public void publish(Data data) throws PublishException {

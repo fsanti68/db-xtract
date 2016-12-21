@@ -38,10 +38,15 @@ public class SimpleJournalHandler implements JournalHandler {
 	/**
 	 * 
 	 * @param journalTable
+	 *            journal table's name
 	 * @param query
+	 *            query for data retrieval
 	 * @param batchSize
+	 *            number of rows per batch
 	 * @param publisher
+	 *            {@link Publisher} object
 	 * @param strategy
+	 *            journal strategy
 	 * @throws ConfigurationException
 	 */
 	public SimpleJournalHandler(String journalTable, String query, int batchSize, Publisher publisher,
@@ -96,8 +101,6 @@ public class SimpleJournalHandler implements JournalHandler {
 	/**
 	 * @param data
 	 *            retrieved data (see {@link Data}})
-	 * @return publish imported data to registered publisher (see
-	 *         {@link SimpleJournalHandler}).
 	 */
 	@Override
 	public void publish(Data data) throws PublishException {

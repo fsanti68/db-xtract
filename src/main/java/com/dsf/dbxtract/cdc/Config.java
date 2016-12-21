@@ -32,7 +32,6 @@ import java.util.Properties;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
@@ -41,9 +40,8 @@ import com.dsf.dbxtract.cdc.journal.JournalHandler;
  * <p>
  * The Config class represents a configuration properties file.
  * </p>
- * <p>
  * Expected configuration items are:
- * <table>
+ * <table summary="configuration parameters">
  * <thead>
  * <tr>
  * <th>Item</th>
@@ -93,7 +91,6 @@ import com.dsf.dbxtract.cdc.journal.JournalHandler;
  * </tr>
  * </tbody>
  * </table>
- * </p>
  * 
  * @author fabio de santi
  * @version 0.5
@@ -115,8 +112,9 @@ public class Config {
 	 * 
 	 * @param path
 	 *            file/path name
+	 * 
 	 * @throws ConfigurationException
-	 * @throws Exception
+	 *             any configuration retrieval error
 	 */
 	public Config(String path) throws ConfigurationException {
 
@@ -129,6 +127,7 @@ public class Config {
 	 * 
 	 * @param filename
 	 *            properties file pathname
+	 * 
 	 * @throws ConfigurationException
 	 */
 	private void init(String filename) throws ConfigurationException {
@@ -146,6 +145,8 @@ public class Config {
 	 * Get configuration data from a stream and initializes all class members.
 	 * 
 	 * @param stream
+	 *            configuration data stream
+	 * 
 	 * @throws ConfigurationException
 	 */
 	private void init(InputStream stream) throws ConfigurationException {
@@ -193,6 +194,7 @@ public class Config {
 	 * Add a handler to the handler's map (handler x source).
 	 * 
 	 * @param source
+	 *            {@link Source} object
 	 * @throws ConfigurationException
 	 */
 	private void addHandlerToMap(Source source) throws ConfigurationException {
@@ -213,10 +215,10 @@ public class Config {
 	 * Data sources are a list of database connections and its associated
 	 * handler's class names.
 	 * 
-	 * @return a {@link Sources} object with a list of data sources
-	 * @throws IOException
-	 * @throws JsonParseException
-	 * @throws Exception
+	 * @return a {@link Sources} object with a list of data sources.
+	 * 
+	 * @throws ConfigurationException
+	 *             when a required entry is missed
 	 */
 	public Sources getDataSources() throws ConfigurationException {
 
@@ -246,6 +248,7 @@ public class Config {
 	 * @param srcname
 	 *            data source name
 	 * @return a {@link Source} object that matches with the given name
+	 * 
 	 * @throws ConfigurationException
 	 */
 	private Source getDataSource(String srcname) throws ConfigurationException {
@@ -271,6 +274,9 @@ public class Config {
 	 * Retrieves all handlers defined in the configuration properties.
 	 * 
 	 * @return a collection of handlers
+	 * 
+	 * @throws ConfigurationException
+	 *             any configuration retrieval error
 	 */
 	public Collection<JournalHandler> getHandlers() throws ConfigurationException {
 		checkUpdated();
@@ -283,6 +289,9 @@ public class Config {
 	 * @param handler
 	 *            a {@link JournalHandler} object
 	 * @return a {@link Source} object associated to the handler
+	 * 
+	 * @throws ConfigurationException
+	 *             any configuration retrieval error
 	 */
 	public Source getSourceByHandler(JournalHandler handler) throws ConfigurationException {
 		checkUpdated();
@@ -293,6 +302,9 @@ public class Config {
 	 * Retrieves the zookeeper connection string.
 	 * 
 	 * @return ZooKeeper connection string (i.e. "localhost:2181")
+	 * 
+	 * @throws ConfigurationException
+	 *             any configuration retrieval error
 	 */
 	public String getZooKeeper() throws ConfigurationException {
 		checkUpdated();
@@ -306,6 +318,8 @@ public class Config {
 	 * Retrieves the <code>thread.pool.size</code> parameter.
 	 * 
 	 * @return maximum concurrent threads
+	 * @throws ConfigurationException
+	 *             any configuration retrieval error
 	 */
 	public int getThreadPoolSize() throws ConfigurationException {
 		checkUpdated();
@@ -327,6 +341,9 @@ public class Config {
 	 * considered.
 	 * 
 	 * @return empty list or a list of datasources for this node
+	 * 
+	 * @throws ConfigurationException
+	 *             any configuration retrieval error
 	 */
 	public List<String> getAffinity() throws ConfigurationException {
 
@@ -404,7 +421,8 @@ public class Config {
 	/**
 	 * Print out configuration data.
 	 * 
-	 * @throws Exception
+	 * @throws ConfigurationException
+	 *             any configuration retrieval error
 	 */
 	public void listAll() throws ConfigurationException {
 		Sources srcs = getDataSources();

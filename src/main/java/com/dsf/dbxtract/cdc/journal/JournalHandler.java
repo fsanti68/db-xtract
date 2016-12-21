@@ -56,6 +56,7 @@ public interface JournalHandler {
 	 * 
 	 * @param data
 	 *            object {@link Data} for captured data
+	 * @throws PublishException
 	 */
 	public void publish(Data data) throws PublishException;
 
@@ -66,7 +67,7 @@ public interface JournalHandler {
 	 * <li>WINDOW - memorizes
 	 * </ul>
 	 * 
-	 * @return
+	 * @return the handler's journal strategy
 	 */
 	public JournalStrategy getStrategy();
 }
