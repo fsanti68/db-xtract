@@ -39,7 +39,7 @@ public class Sources {
 	 */
 	public List<Source> getSources() {
 		if (sourceList == null)
-			sourceList = new ArrayList<Source>();
+			sourceList = new ArrayList<>();
 		return sourceList;
 	}
 

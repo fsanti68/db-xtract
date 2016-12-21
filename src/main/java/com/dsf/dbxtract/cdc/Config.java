@@ -133,21 +133,12 @@ public class Config {
 	 */
 	private void init(String filename) throws ConfigurationException {
 
-		InputStream stream = null;
 		try {
-			stream = new FileInputStream(new File(filename));
+			InputStream stream = new FileInputStream(new File(filename));
 			init(stream);
 
 		} catch (FileNotFoundException e) {
 			throw new ConfigurationException("configuration file not found: " + filename, e);
-
-		} finally {
-			if (stream != null)
-				try {
-					stream.close();
-				} catch (IOException e) {
-					logger.warn("failed to close file " + filename, e);
-				}
 		}
 	}
 
@@ -169,7 +160,7 @@ public class Config {
 		this.props = p;
 
 		// Prepare a handler's list and respective data sources
-		handlerMap = new HashMap<JournalHandler, Source>();
+		handlerMap = new HashMap<>();
 		Sources srcs = getDataSources();
 		if (srcs != null) {
 			List<String> affinity = getAffinity();

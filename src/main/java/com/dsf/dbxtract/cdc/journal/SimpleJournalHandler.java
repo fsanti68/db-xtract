@@ -72,6 +72,7 @@ public class SimpleJournalHandler implements JournalHandler {
 	/**
 	 * @return journal table name
 	 */
+	@Override
 	public String getJournalTable() {
 		return journal;
 	}
@@ -79,6 +80,7 @@ public class SimpleJournalHandler implements JournalHandler {
 	/**
 	 * @return processing batch size (maximum rows to be imported per cycle)
 	 */
+	@Override
 	public int getBatchSize() {
 		return batchSize;
 	}
@@ -86,6 +88,7 @@ public class SimpleJournalHandler implements JournalHandler {
 	/**
 	 * @return data retrieval query
 	 */
+	@Override
 	public String getTargetQuery() {
 		return query;
 	}
@@ -96,6 +99,7 @@ public class SimpleJournalHandler implements JournalHandler {
 	 * @return publish imported data to registered publisher (see
 	 *         {@link SimpleJournalHandler}).
 	 */
+	@Override
 	public void publish(Data data) throws PublishException {
 		publisher.publish(data);
 	}

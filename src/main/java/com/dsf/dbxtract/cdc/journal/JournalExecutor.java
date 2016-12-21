@@ -57,7 +57,7 @@ public class JournalExecutor implements Runnable {
 
 	private static final Logger logger = LogManager.getLogger(JournalExecutor.class.getName());
 
-	private Map<Source, BasicDataSource> dataSources = new HashMap<Source, BasicDataSource>();
+	private Map<Source, BasicDataSource> dataSources = new HashMap<>();
 	private Statistics statistics = null;
 	private String zookeeper;
 	private JournalHandler handler;
@@ -141,7 +141,7 @@ public class JournalExecutor implements Runnable {
 	private List<Map<String, Object>> getJournalKeys(CuratorFramework client, Connection conn)
 			throws SQLException, ConfigurationException {
 
-		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> result = new ArrayList<>();
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
@@ -177,12 +177,12 @@ public class JournalExecutor implements Runnable {
 
 		while (rs.next()) {
 			if (journalColumns == null) {
-				journalColumns = new ArrayList<String>();
+				journalColumns = new ArrayList<>();
 				for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
 					journalColumns.add(rs.getMetaData().getColumnLabel(i + 1).toLowerCase());
 				}
 			}
-			Map<String, Object> map = new HashMap<String, Object>();
+			Map<String, Object> map = new HashMap<>();
 			for (String col : journalColumns) {
 				map.put(col, rs.getObject(col));
 			}

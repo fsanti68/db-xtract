@@ -41,10 +41,12 @@ public class TestHandler implements JournalHandler {
 
 	private static Logger logger = LogManager.getLogger(TestHandler.class.getName());
 
+	@Override
 	public String getJournalTable() {
 		return "J$TEST";
 	}
 
+	@Override
 	public int getBatchSize() {
 		return 200;
 	}
@@ -52,6 +54,7 @@ public class TestHandler implements JournalHandler {
 	/**
 	 * Query parameters must be referenced just like in JPA's NamedQueries.
 	 */
+	@Override
 	public String getTargetQuery() {
 		return "SELECT * FROM TEST WHERE KEY1 = :key1 AND KEY2 = :key2";
 	}
@@ -62,6 +65,7 @@ public class TestHandler implements JournalHandler {
 	 * 
 	 * @param data
 	 */
+	@Override
 	public void publish(Data data) throws PublishException {
 		logger.info("(delete strategy) Data to Publish (columns/rows): " + data.getColumnNames().length + "/" + data.getRows().size()
 				+ " rows");

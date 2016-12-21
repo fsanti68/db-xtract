@@ -41,10 +41,12 @@ public class TestWindowHandler implements JournalHandler {
 
 	private static Logger logger = LogManager.getLogger(TestWindowHandler.class.getName());
 
+	@Override
 	public String getJournalTable() {
 		return "J$TEST";
 	}
 
+	@Override
 	public int getBatchSize() {
 		return 300;
 	}
@@ -52,6 +54,7 @@ public class TestWindowHandler implements JournalHandler {
 	/**
 	 * Query parameters must be referenced just like in JPA's NamedQueries.
 	 */
+	@Override
 	public String getTargetQuery() {
 		return "SELECT * FROM test WHERE key1 = :key1 AND key2 = :key2";
 	}
@@ -63,6 +66,7 @@ public class TestWindowHandler implements JournalHandler {
 	 * @param data
 	 *            captured data object
 	 */
+	@Override
 	public void publish(Data data) throws PublishException {
 		logger.info("(window strategy) Data to Publish (columns/rows): " + data.getColumnNames().length + "/"
 				+ data.getRows().size() + " rows");

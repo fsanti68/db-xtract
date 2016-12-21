@@ -78,17 +78,18 @@ public class InfoHandler {
 		if (mapper == null)
 			mapper = new ObjectMapper();
 
-		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-		CuratorFramework client = CuratorFrameworkFactory.newClient(config.getZooKeeper(), retryPolicy);
-		client.start();
 		Stat stat = new Stat();
 		try {
+			RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+			CuratorFramework client = CuratorFrameworkFactory.newClient(config.getZooKeeper(), retryPolicy);
+			client.start();
 			List<String> handlers = client.getChildren().forPath(Statistics.ZOOPATH);
 			for (String handler : handlers) {
 				byte[] b = client.getData().forPath(Statistics.ZOOPATH + "/" + handler);
 				StatEntry entry = mapper.readValue(b, Statistics.StatEntry.class);
 				stat.getMap().put(handler, entry);
 			}
+			client.close();
 
 			StringWriter writer = new StringWriter();
 			mapper.writeValue(writer, stat);
@@ -96,9 +97,6 @@ public class InfoHandler {
 
 		} catch (Exception e) {
 			throw new ConfigurationException("failed to retrieve zk statistics at " + Statistics.ZOOPATH, e);
-
-		} finally {
-			client.close();
 		}
 	}
 
@@ -111,7 +109,7 @@ public class InfoHandler {
 		@XmlTransient
 		protected Map<String, Statistics.StatEntry> getMap() {
 			if (m == null)
-				m = new HashMap<String, Statistics.StatEntry>();
+				m = new HashMap<>();
 			return m;
 		}
 
