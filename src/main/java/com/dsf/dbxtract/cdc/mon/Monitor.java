@@ -1,13 +1,15 @@
 package com.dsf.dbxtract.cdc.mon;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.dsf.dbxtract.cdc.Config;
-
-import fi.iki.elonen.NanoHTTPD;
 
 /**
  * Set's up a HTTP listener for statistics and administration tasks.
@@ -15,33 +17,56 @@ import fi.iki.elonen.NanoHTTPD;
  * @author fabio de santi
  * @version 0.2
  */
-public class Monitor extends NanoHTTPD {
+public class Monitor {
 
 	private static final Logger logger = LogManager.getLogger(Monitor.class.getName());
 
-	private Config config;
+	private static Monitor instance;
 
 	/**
-	 * Start's monitor lister
+	 * Start's monitor JMX.
 	 * 
-	 * @param port
-	 *            HTTP port to listen (default: 8080)
 	 * @param config
 	 *            {@link Config} object
 	 * @throws IOException
 	 */
-	public Monitor(int port, Config config) throws IOException {
-		super(port);
-		this.config = config;
-		logger.info("Started monitor at port " + port);
+	private Monitor(Config config) throws IOException {
+
+		// starts JMX
+		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+		try {
+			ObjectName name = new ObjectName("com.dsf.dbxtract:type=InfoMBean");
+			mbs.registerMBean(new InfoMBean(config), name);
+
+		} catch (Exception e) {
+			logger.error("failed to initialized mbeans", e);
+		}
 	}
 
-	@Override
-	public Response serve(IHTTPSession session) {
-		Method method = session.getMethod();
-		String uri = session.getUri();
-		logger.info(method + " " + uri);
+	/**
+	 * 
+	 * @param config
+	 *            {@link Config} object
+	 * @return instance of {@link Monitor} object
+	 * @throws IOException
+	 *             on configuration file access
+	 */
+	public static Monitor getInstance(Config config) throws IOException {
+		if (instance == null) {
+			instance = new Monitor(config);
+		}
+		return instance;
+	}
 
-		return new InfoHandler(config).serve(session);
+	/**
+	 * 
+	 * @return
+	 * @throws MonitorNotInitializedException
+	 */
+	public static Monitor getInstance() throws MonitorNotInitializedException {
+		if (instance == null)
+			throw new MonitorNotInitializedException("Monitor not initialized.");
+
+		return instance;
 	}
 }

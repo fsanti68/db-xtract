@@ -57,6 +57,8 @@ public class AppJournalDeleteTest {
 
 	/**
 	 * Rigourous Test :-)
+	 * 
+	 * @throws Exception
 	 */
 	@Test(timeOut = 60000)
 	public void testAppWithJournalDelete() throws Exception {

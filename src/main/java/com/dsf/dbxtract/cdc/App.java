@@ -48,7 +48,6 @@ public class App {
 	private static Logger logger = LogManager.getLogger(App.class.getName());
 
 	private static final String PARAM_CONFIG = "config";
-	private static final String PARAM_MONITOR = "monitor";
 
 	private static final String COMMAND_LIST = "list";
 	private static final String COMMAND_START = "start";
@@ -121,9 +120,6 @@ public class App {
 		// required: --config <file>
 		options.addOption(Option.builder().longOpt(PARAM_CONFIG).hasArg().numberOfArgs(1).argName("file")
 				.desc("configuration file pathname").required().build());
-		// optional: --monitor <port>
-		options.addOption(Option.builder().longOpt(PARAM_MONITOR).hasArg().numberOfArgs(1).argName("port")
-				.desc("monitoring port number (default: 9000)").required(false).build());
 
 		// commands:
 		OptionGroup commands = new OptionGroup();
@@ -140,7 +136,6 @@ public class App {
 
 	private static void parseCommand(CommandLine cmd) throws ConfigurationException, IOException, ParseException {
 
-		int monitorPort = 9000;
 		String configFilename;
 		Config config;
 
@@ -153,9 +148,6 @@ public class App {
 		} else {
 			throw new InvalidParameterException("Parameter required: --config");
 		}
-		if (cmd.hasOption(PARAM_MONITOR)) {
-			monitorPort = Integer.parseInt(cmd.getOptionValue(PARAM_MONITOR));
-		}
 
 		if (cmd.hasOption(COMMAND_LIST)) {
 			config.listAll();
@@ -167,7 +159,7 @@ public class App {
 			config.report();
 
 			// Starts monitor server
-			new Monitor(monitorPort, config).start();
+			Monitor.getInstance(config);
 
 			// Starts service
 			App app = new App(config);

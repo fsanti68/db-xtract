@@ -182,5 +182,11 @@ public class Statistics {
 			if (rows > 0)
 				this.lastRead = new Date();
 		}
+
+		@Override
+		public String toString() {
+			return "StatEntry [name=" + name + ", lastSeek=" + lastSeek + ", lastRead=" + lastRead + ", readCount="
+					+ readCount + "]";
+		}
 	}
 }
