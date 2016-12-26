@@ -19,8 +19,18 @@ package com.dsf.dbxtract.cdc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import javax.management.MBeanServerConnection;
+import javax.management.ObjectName;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.TabularDataSupport;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.curator.RetryPolicy;
@@ -36,7 +46,9 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.Test;
 
 import com.dsf.dbxtract.cdc.journal.JournalStrategy;
+import com.dsf.dbxtract.cdc.mon.InfoMBean;
 import com.dsf.dbxtract.cdc.mon.Monitor;
+import com.dsf.dbxtract.cdc.sample.TestWindowHandler;
 
 /**
  * Unit test for simple App.
@@ -51,7 +63,6 @@ public class AppJournalWindowTest {
 	private int TEST_SIZE = 300;
 
 	private CuratorFramework client;
-	private Monitor monitor;
 	private App app;
 	private String configFile;
 
@@ -79,7 +90,9 @@ public class AppJournalWindowTest {
 
 	/**
 	 * Rigourous Test :-)
+	 * 
 	 * @throws Exception
+	 *             in case of any error
 	 */
 	@Test(dependsOnMethods = "setUp", timeOut = 60000)
 	public void testAppWithJournalWindow() throws Exception {
@@ -133,6 +146,8 @@ public class AppJournalWindowTest {
 			System.out.println("maximum window_id loaded: " + maxWindowId);
 		}
 		rs.close();
+		conn.close();
+		ds.close();
 
 		// Clear any previous test
 		String zkKey = "/dbxtract/cdc/" + source.getName() + "/J$TEST/lastWindowId";
@@ -140,7 +155,7 @@ public class AppJournalWindowTest {
 			client.delete().forPath(zkKey);
 
 		// starts monitor
-		monitor = Monitor.getInstance(config);
+		Monitor.getInstance(config);
 
 		// start app
 		app = new App(config);
@@ -164,19 +179,30 @@ public class AppJournalWindowTest {
 				System.out.println("ZooKeeper - no node exception :: " + zkKey);
 			}
 		}
-
-		conn.close();
-		ds.close();
 	}
 
 	@Test(dependsOnMethods = { "testAppWithJournalWindow" })
 	public void testInfoStatistics() throws Exception {
 
-		// TODO: replace by JMX
-		// Assert.assertTrue(s.startsWith("{\"handlers\":[{\"name\":"),
-		// "unexpected response: " + s);
-		// Assert.assertTrue(s.contains("\"readCount\":" + TEST_SIZE + "}"),
-		// "unexpected response: " + s);
+		JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:5000/jmxrmi");
+		JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
+		MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
+
+		ObjectName mbeanName = new ObjectName("com.dsf.dbxtract:type=InfoMBean");
+
+		TabularDataSupport info = (TabularDataSupport) mbsc.getAttribute(mbeanName, InfoMBean.ATTR_INFO);
+		Collection<?> list = info.values();
+		boolean hasHandlerEntry = false;
+		for (Iterator<?> it = list.iterator(); it.hasNext();) {
+			CompositeDataSupport entry = (CompositeDataSupport) it.next();
+			
+			if (entry.get("handler").equals(TestWindowHandler.class.getName())) {
+				assert (((Long) entry.get("readCount")).longValue() == TEST_SIZE);
+				hasHandlerEntry = true;
+			}
+		}
+		assert (hasHandlerEntry);
+		jmxc.close();
 	}
 
 	@AfterTest

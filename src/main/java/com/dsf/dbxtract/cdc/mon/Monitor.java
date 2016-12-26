@@ -36,7 +36,7 @@ public class Monitor {
 		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		try {
 			ObjectName name = new ObjectName("com.dsf.dbxtract:type=InfoMBean");
-			mbs.registerMBean(new InfoMBean(config), name);
+			mbs.registerMBean(new InfoMBeanImpl(config), name);
 
 		} catch (Exception e) {
 			logger.error("failed to initialized mbeans", e);
@@ -60,8 +60,10 @@ public class Monitor {
 
 	/**
 	 * 
-	 * @return
+	 * @return instance of {@link Monitor} object
 	 * @throws MonitorNotInitializedException
+	 *             when called before Monitor initialization (see
+	 *             {@link Monitor#getInstance(Config)})
 	 */
 	public static Monitor getInstance() throws MonitorNotInitializedException {
 		if (instance == null)
