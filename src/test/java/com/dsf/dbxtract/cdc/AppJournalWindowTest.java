@@ -59,6 +59,8 @@ public class AppJournalWindowTest {
 	private static final Logger logger = LogManager.getLogger(AppJournalWindowTest.class.getName());
 
 	private static final String PROPERTY_RESOURCE = "com/dsf/dbxtract/cdc/config-app-journal-window.properties";
+	
+	private static final String ZK_STATISTICS_PATH = "/dbxtract/cdc/statistics";
 
 	private int TEST_SIZE = 300;
 
@@ -80,11 +82,11 @@ public class AppJournalWindowTest {
 		client.start();
 
 		// Clean previous statistics and states
-		if (client.checkExists().forPath("/dbxtract/cdc/statistics") != null) {
-			List<String> children = client.getChildren().forPath("/dbxtract/cdc/statistics");
+		if (client.checkExists().forPath(ZK_STATISTICS_PATH) != null) {
+			List<String> children = client.getChildren().forPath(ZK_STATISTICS_PATH);
 			for (String k : children)
-				client.delete().forPath("/dbxtract/cdc/statistics/" + k);
-			client.delete().forPath("/dbxtract/cdc/statistics");
+				client.delete().forPath(ZK_STATISTICS_PATH + "/" + k);
+			client.delete().forPath(ZK_STATISTICS_PATH);
 		}
 	}
 
