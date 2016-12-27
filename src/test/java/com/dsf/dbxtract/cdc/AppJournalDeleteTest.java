@@ -61,7 +61,7 @@ public class AppJournalDeleteTest {
 	 * @throws Exception
 	 *             in case of any error
 	 */
-	@Test(timeOut = 60000)
+	@Test(timeOut = 120000)
 	public void testAppWithJournalDelete() throws Exception {
 
 		final Config config = new Config(configFile);

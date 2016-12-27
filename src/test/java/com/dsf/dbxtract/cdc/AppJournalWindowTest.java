@@ -96,7 +96,7 @@ public class AppJournalWindowTest {
 	 * @throws Exception
 	 *             in case of any error
 	 */
-	@Test(dependsOnMethods = "setUp", timeOut = 60000)
+	@Test(dependsOnMethods = "setUp", timeOut = 120000)
 	public void testAppWithJournalWindow() throws Exception {
 
 		final Config config = new Config(configFile);
