@@ -159,7 +159,7 @@ public class InfoMBean implements DynamicMBean {
 				logger.warn(e);
 			}
 		}
-		return (resultList);
+		return resultList;
 	}
 
 	@Override
