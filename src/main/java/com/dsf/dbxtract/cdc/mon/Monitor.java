@@ -36,7 +36,7 @@ public class Monitor {
 		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		try {
 			ObjectName name = new ObjectName("com.dsf.dbxtract:type=InfoMBean");
-			mbs.registerMBean(new InfoMBeanImpl(config), name);
+			mbs.registerMBean(new InfoMBean(config), name);
 
 		} catch (Exception e) {
 			logger.error("failed to initialized mbeans", e);

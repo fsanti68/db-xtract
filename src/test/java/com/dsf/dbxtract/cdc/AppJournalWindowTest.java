@@ -195,7 +195,7 @@ public class AppJournalWindowTest {
 		boolean hasHandlerEntry = false;
 		for (Iterator<?> it = list.iterator(); it.hasNext();) {
 			CompositeDataSupport entry = (CompositeDataSupport) it.next();
-			
+
 			if (entry.get("handler").equals(TestWindowHandler.class.getName())) {
 				assert (((Long) entry.get("readCount")).longValue() == TEST_SIZE);
 				hasHandlerEntry = true;
