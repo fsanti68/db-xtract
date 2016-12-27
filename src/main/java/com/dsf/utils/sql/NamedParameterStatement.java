@@ -48,10 +48,21 @@ public class NamedParameterStatement {
 
 	static final int skip(String s, int start, char c) {
 		int k = start;
-		int length = s.length() - 1;
-		while (k < length && s.charAt(++k) != c) {
-		}
+		int length = s.length();
+		do {
+			k++;
+		} while (k < length && s.charAt(k) != c);
 		return k + 1;
+	}
+	
+	static final String getParamName(String query, int k) {
+		
+		int length = query.length();
+		int j = k + 2;
+		while (j < length && Character.isJavaIdentifierPart(query.charAt(j))) {
+			j++;
+		}
+		return query.substring(k + 1, j);
 	}
 
 	/**
@@ -84,11 +95,7 @@ public class NamedParameterStatement {
 				parsedQuery.append(query.substring(start, k--));
 
 			} else if (c == ':' && k + 1 < length && Character.isJavaIdentifierStart(query.charAt(k + 1))) {
-				int j = k + 2;
-				while (j < length && Character.isJavaIdentifierPart(query.charAt(j))) {
-					j++;
-				}
-				String name = query.substring(k + 1, j);
+				String name = getParamName(query, k);
 				parsedQuery.append('?'); // replace the parameter with a
 											// question mark
 				k += name.length(); // skip past the end if the parameter
