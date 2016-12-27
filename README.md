@@ -85,6 +85,17 @@ Or... you can start the application before database and/or ZooKeeper and enjoy i
 
 * [Maven](https://maven.apache.org/) - Dependency Management
 
+## Monitoring with JMX
+
+The application can be monitored using any JMX-compliant tool. A simple example is jconsole, that is part of regular JDK distribution. To start the application with JMX support, just call:
+
+	$ export JMXPARAMS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=5000"
+	$ java $JMXPARAMS -jar dbxtract.jar --config myconfig.properties --start
+	
+	$ jconsole
+	
+Once opened the jconsole window, you can select the corresponding process id (PID) or select a remote connection with <code>service:jmx:rmi:///jndi/rmi://localhost:5000/jmxrmi</code>.
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
