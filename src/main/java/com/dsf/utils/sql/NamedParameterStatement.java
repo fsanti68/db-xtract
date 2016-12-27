@@ -45,13 +45,13 @@ public class NamedParameterStatement {
 		String parsedQuery = parse(query, indexMap);
 		statement = connection.prepareStatement(parsedQuery);
 	}
-	
+
 	static final int skip(String s, int start, char c) {
 		int k = start;
 		int length = s.length() - 1;
-		while (k < length && s.charAt(++k) != '\'')
-			;
-		return k;
+		while (k < length && s.charAt(++k) != c) {
+		}
+		return k + 1;
 	}
 
 	/**
@@ -68,18 +68,20 @@ public class NamedParameterStatement {
 	static final String parse(String query, Map paramMap) {
 
 		int length = query.length();
-		int start, k = 0, index = 0;
+		int start;
+		int k = 0;
+		int index = 0;
 		StringBuilder parsedQuery = new StringBuilder(length);
 		while (k < length) {
 			start = k;
 			char c = query.charAt(k);
 			if (c == '\'') {
 				k = skip(query, k, '\'');
-				parsedQuery.append(query.substring(start, k));
+				parsedQuery.append(query.substring(start, k--));
 
 			} else if (c == '\"') {
 				k = skip(query, k, '\"');
-				parsedQuery.append(query.substring(start, k));
+				parsedQuery.append(query.substring(start, k--));
 
 			} else if (c == ':' && k + 1 < length && Character.isJavaIdentifierStart(query.charAt(k + 1))) {
 				int j = k + 2;
@@ -89,14 +91,14 @@ public class NamedParameterStatement {
 				String name = query.substring(k + 1, j);
 				parsedQuery.append('?'); // replace the parameter with a
 											// question mark
-				k += name.length() + 1; // skip past the end if the parameter
+				k += name.length(); // skip past the end if the parameter
 
 				getListItemFromMap(paramMap, name).add(new Integer(++index));
 
 			} else {
 				parsedQuery.append(c);
-				k++;
 			}
+			k++;
 		}
 
 		// replace the lists of Integer objects with arrays of ints
