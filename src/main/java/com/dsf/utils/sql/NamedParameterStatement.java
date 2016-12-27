@@ -45,6 +45,14 @@ public class NamedParameterStatement {
 		String parsedQuery = parse(query, indexMap);
 		statement = connection.prepareStatement(parsedQuery);
 	}
+	
+	static final int skip(String s, int start, char c) {
+		int k = start;
+		int length = s.length() - 1;
+		while (k < length && s.charAt(++k) != '\'')
+			;
+		return k;
+	}
 
 	/**
 	 * Parses a query with named parameters. The parameter-index mappings are
@@ -58,46 +66,37 @@ public class NamedParameterStatement {
 	 * @return the parsed query
 	 */
 	static final String parse(String query, Map paramMap) {
-		// I was originally using regular expressions, but they didn't work well
-		// for ignoring parameter-like strings inside quotes.
+
 		int length = query.length();
+		int start, k = 0, index = 0;
 		StringBuilder parsedQuery = new StringBuilder(length);
-		boolean inSingleQuote = false;
-		boolean inDoubleQuote = false;
-		int index = 1;
-
-		int k = 0;
 		while (k < length) {
+			start = k;
 			char c = query.charAt(k);
-			if (inSingleQuote) {
-				if (c == '\'') {
-					inSingleQuote = false;
+			if (c == '\'') {
+				k = skip(query, k, '\'');
+				parsedQuery.append(query.substring(start, k));
+
+			} else if (c == '\"') {
+				k = skip(query, k, '\"');
+				parsedQuery.append(query.substring(start, k));
+
+			} else if (c == ':' && k + 1 < length && Character.isJavaIdentifierStart(query.charAt(k + 1))) {
+				int j = k + 2;
+				while (j < length && Character.isJavaIdentifierPart(query.charAt(j))) {
+					j++;
 				}
-			} else if (inDoubleQuote) {
-				if (c == '"') {
-					inDoubleQuote = false;
-				}
+				String name = query.substring(k + 1, j);
+				parsedQuery.append('?'); // replace the parameter with a
+											// question mark
+				k += name.length() + 1; // skip past the end if the parameter
+
+				getListItemFromMap(paramMap, name).add(new Integer(++index));
+
 			} else {
-				if (c == '\'') {
-					inSingleQuote = true;
-				} else if (c == '"') {
-					inDoubleQuote = true;
-				} else if (c == ':' && k + 1 < length && Character.isJavaIdentifierStart(query.charAt(k + 1))) {
-					int j = k + 2;
-					while (j < length && Character.isJavaIdentifierPart(query.charAt(j))) {
-						j++;
-					}
-					String name = query.substring(k + 1, j);
-					c = '?'; // replace the parameter with a question mark
-					k += name.length(); // skip past the end if the parameter
-
-					getListItemFromMap(paramMap, name).add(new Integer(index));
-
-					index++;
-				}
+				parsedQuery.append(c);
+				k++;
 			}
-			parsedQuery.append(c);
-			k++;
 		}
 
 		// replace the lists of Integer objects with arrays of ints
