@@ -1,6 +1,7 @@
 package com.dsf.utils.sql;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.testng.annotations.Test;
@@ -12,14 +13,14 @@ public class NamedParameterStatementTest {
 		String source = "select *, \"pippo\" as name from test where k = :kparam and y = :yparam and status = 'OPEN' and x = :kparam";
 		String expect = "select *, \"pippo\" as name from test where k = ? and y = ? and status = 'OPEN' and x = ?";
 
-		Map<?, ?> paramMap = new HashMap<>();
+		Map<String, List<Integer>> paramMap = new HashMap<>();
 		String result = NamedParameterStatement.parse(source, paramMap);
 		assert expect.equals(result);
 		assert paramMap.containsKey("kparam");
 		assert paramMap.containsKey("yparam");
-		int[] k = (int[]) paramMap.get("kparam");
-		int[] y = (int[]) paramMap.get("yparam");
-		assert k[0] == 1 && k[1] == 3;
-		assert y[0] == 2;
+		List<Integer> k = paramMap.get("kparam");
+		List<Integer> y = paramMap.get("yparam");
+		assert k.size() == 2 && k.get(0).intValue() == 1 && k.get(1).intValue() == 3;
+		assert y.size() == 1 && y.get(0).intValue() == 2;
 	}
 }
