@@ -22,9 +22,8 @@ import java.sql.ResultSet;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -38,9 +37,9 @@ import com.dsf.dbxtract.cdc.journal.JournalStrategy;
 @Test(singleThreaded = true)
 public class AppJournalDeleteTest {
 
-	private static final Logger logger = LogManager.getLogger(AppJournalDeleteTest.class.getName());
-
 	private static final String PROPERTY_RESOURCE = "com/dsf/dbxtract/cdc/config-app-journal-delete.properties";
+
+	private Logger logger = LogManager.getLogger(AppJournalDeleteTest.class.getName());
 
 	private int TEST_SIZE = 300;
 	private App app;
@@ -50,7 +49,6 @@ public class AppJournalDeleteTest {
 	public void setUp() throws Exception {
 
 		configFile = ClassLoader.getSystemResource(PROPERTY_RESOURCE).getFile();
-		PropertyConfigurator.configure(configFile);
 
 		logger.info("Testing Journal-based CDC with delete strategy");
 	}

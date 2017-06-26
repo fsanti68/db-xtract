@@ -29,9 +29,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 
 import com.dsf.dbxtract.cdc.journal.JournalExecutor;
 import com.dsf.dbxtract.cdc.journal.JournalHandler;
@@ -44,8 +41,6 @@ import com.dsf.dbxtract.cdc.mon.Monitor;
  * @version 0.2
  */
 public class App {
-
-	private static Logger logger = LogManager.getLogger(App.class.getName());
 
 	private static final String PARAM_CONFIG = "config";
 
@@ -141,10 +136,8 @@ public class App {
 
 		if (cmd.hasOption(PARAM_CONFIG)) {
 			configFilename = cmd.getOptionValue(PARAM_CONFIG);
-			// configure log4j
-			PropertyConfigurator.configure(configFilename);
-			// obtain configuration
 			config = new Config(configFilename);
+
 		} else {
 			throw new InvalidParameterException("Parameter required: --config");
 		}
@@ -153,7 +146,7 @@ public class App {
 			config.listAll();
 
 		} else if (cmd.hasOption(COMMAND_START)) {
-			logger.info("Welcome to db-xtract");
+			info("Welcome to db-xtract");
 
 			// get db-xtract configuration
 			config.report();
@@ -170,20 +163,29 @@ public class App {
 		}
 	}
 
+	final static void info(String message) {
+		System.out.printf("[INFO] %s\n", message);
+	}
+
+	final static void error(String message, Throwable t) {
+		if (message != null)
+			System.out.printf("[INFO] %s\n", message);
+		if (t != null)
+			t.printStackTrace(System.out);
+	}
+
 	/**
 	 * <p>
 	 * Starts the dbxtract app.
 	 * </p>
 	 * <p>
 	 * usage: java -jar dbxtract.jar --config &lt;file&gt; [--list | --start]
-	 * [--monitor &lt;port&gt;]
 	 * </p>
 	 * 
 	 * <pre>
-	 * --config &lt;file&gt;    configuration file pathname
-	 * --list             list configuration parameters and values
-	 * --monitor &lt;port&gt;   monitoring port number (default: 9000)
-	 * --start            start dbxtract agent
+	 * --config &lt;file&gt; configuration file pathname
+	 * --list          list configuration parameters and values
+	 * --start         start dbxtract agent
 	 * </pre>
 	 * 
 	 * @param args
@@ -202,10 +204,10 @@ public class App {
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp("java -jar dbxtract.jar", options, true);
 
-			logger.error(e1);
+			error("Unable to parse parameters", e1);
 
 		} catch (Exception e) {
-			logger.fatal("Unable to start dbxtract", e);
+			error("Unable to start dbxtract", e);
 		}
 	}
 }

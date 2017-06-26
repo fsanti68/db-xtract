@@ -33,8 +33,8 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 
@@ -79,14 +79,16 @@ public class JournalExecutor implements Runnable {
 	 */
 	public JournalExecutor(String agentName, String zookeeper, JournalHandler handler, Source source) {
 		logPrefix = agentName + " :: ";
-		logger.info(logPrefix + "Creating executor for " + handler + " and " + source);
+		if (logger.isDebugEnabled())
+			logger.debug(logPrefix + "Creating executor for " + handler + " and " + source);
 		this.agentName = agentName;
 		this.zookeeper = zookeeper;
 		this.handler = handler;
 		this.source = source;
 		BasicDataSource ds = dataSources.get(source);
 		if (ds == null) {
-			logger.info(agentName + " :: setting up a connection pool for " + source.toString());
+			if (logger.isDebugEnabled())
+				logger.debug(agentName + " :: setting up a connection pool for " + source.toString());
 			ds = new BasicDataSource();
 			ds.setDriverClassName(source.getDriver());
 			ds.setUsername(source.getUser());
@@ -146,7 +148,8 @@ public class JournalExecutor implements Runnable {
 		ResultSet rs = null;
 		try {
 			// Obtem os dados do journal
-			logger.debug(logPrefix + "getting journalized data");
+			if (logger.isDebugEnabled())
+				logger.debug(logPrefix + "getting journalized data");
 			StringBuilder baseQuery = new StringBuilder("select * from ").append(handler.getJournalTable());
 			if (JournalStrategy.WINDOW.equals(handler.getStrategy())) {
 				Long lastWindowId = getLastWindowId(client);
@@ -204,10 +207,14 @@ public class JournalExecutor implements Runnable {
 			throws SQLException, IOException, PublishException {
 
 		if (rows.isEmpty()) {
-			logger.debug(logPrefix + "nothing to load");
+			if (logger.isDebugEnabled())
+				logger.debug(logPrefix + "nothing to load");
 			return;
 		}
-		logger.debug(logPrefix + "getting data");
+		
+		if (logger.isDebugEnabled())
+			logger.debug(logPrefix + "getting data");
+		
 		String query = handler.getTargetQuery();
 		NamedParameterStatement ps = null;
 		ResultSet rs = null;
@@ -283,10 +290,14 @@ public class JournalExecutor implements Runnable {
 	private void deleteFromJournal(Connection conn, List<Map<String, Object>> rows) throws SQLException {
 
 		if (rows.isEmpty()) {
-			logger.debug(logPrefix + "nothing to clean");
+			if (logger.isDebugEnabled())
+				logger.debug(logPrefix + "nothing to clean");
 			return;
 		}
-		logger.debug(logPrefix + "cleaning journal " + handler.getJournalTable());
+		
+		if (logger.isDebugEnabled())
+			logger.debug(logPrefix + "cleaning journal " + handler.getJournalTable());
+		
 		StringBuilder sb = new StringBuilder("delete from " + handler.getJournalTable() + " where ");
 		for (int i = 0; i < journalColumns.size(); i++) {
 			sb.append(i > 0 ? " and " : "").append(journalColumns.get(i)).append("=?");
@@ -350,7 +361,8 @@ public class JournalExecutor implements Runnable {
 	@Override
 	public void run() {
 
-		logger.debug(agentName + " :: connecting to " + zookeeper);
+		if (logger.isDebugEnabled())
+			logger.debug(agentName + " :: connecting to " + zookeeper);
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 		CuratorFramework client = CuratorFrameworkFactory.newClient(zookeeper, retryPolicy);
 		client.start();
@@ -359,13 +371,16 @@ public class JournalExecutor implements Runnable {
 		Connection conn = null;
 		String lockPath = getPrefix() + "/lock";
 		InterProcessMutex lock = new InterProcessMutex(client, lockPath);
-		logger.debug(logPrefix + "waiting lock from " + zookeeper + lockPath);
+		if (logger.isTraceEnabled())
+			logger.trace(logPrefix + "waiting lock from " + zookeeper + lockPath);
 		boolean lockAcquired = false;
 		try {
 			if (lock.acquire(5, TimeUnit.SECONDS)) {
 				lockAcquired = true;
 
-				logger.debug(logPrefix + "get database connection");
+				if (logger.isTraceEnabled())
+					logger.trace(logPrefix + "get database connection");
+				
 				conn = getConnection();
 
 				// Get journal data
@@ -393,7 +408,8 @@ public class JournalExecutor implements Runnable {
 		} finally {
 			DBUtils.close(conn);
 			if (lockAcquired) {
-				logger.debug(agentName + " :: lock release");
+				if (logger.isDebugEnabled())
+					logger.debug(agentName + " :: lock release");
 				try {
 					lock.release();
 				} catch (Exception e) {

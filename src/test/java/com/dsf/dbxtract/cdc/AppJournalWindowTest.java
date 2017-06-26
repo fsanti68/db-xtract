@@ -37,9 +37,8 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.testng.Assert;
 import org.testng.annotations.AfterTest;
@@ -56,10 +55,10 @@ import com.dsf.dbxtract.cdc.sample.TestWindowHandler;
 @Test(singleThreaded = true)
 public class AppJournalWindowTest {
 
-	private static final Logger logger = LogManager.getLogger(AppJournalWindowTest.class.getName());
+	private Logger logger = LogManager.getLogger(AppJournalWindowTest.class.getName());
 
 	private static final String PROPERTY_RESOURCE = "com/dsf/dbxtract/cdc/config-app-journal-window.properties";
-	
+
 	private static final String ZK_STATISTICS_PATH = "/dbxtract/cdc/statistics";
 
 	private int TEST_SIZE = 300;
@@ -72,7 +71,6 @@ public class AppJournalWindowTest {
 	public void setUp() throws Exception {
 
 		configFile = ClassLoader.getSystemResource(PROPERTY_RESOURCE).getFile();
-		PropertyConfigurator.configure(configFile);
 
 		logger.info("Testing Journal-based CDC with window strategy");
 
