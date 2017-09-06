@@ -1,5 +1,5 @@
 # DB-Xtract
-
+ 
 Welcome to the DB-Xtract!
 
 It is an attempt to create a scalable, fault-tolerant and flexible change data capture (_CDC_) tool. At this very first moment, it is providing journal-based _CDC_, but I want to add other mechanisms for more performance and lower resources consumption.
